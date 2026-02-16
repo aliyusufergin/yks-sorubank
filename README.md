@@ -16,6 +16,8 @@ YKS sınav hazırlığı için dijital soru havuzu ve çalışma kağıdı oluş
 
 ### Docker ile (Önerilen)
 
+**Gereksinimler:** [Docker Engine](https://docs.docker.com/engine/install/) 20+ ve [Docker Compose](https://docs.docker.com/compose/install/) V2
+
 ```bash
 git clone https://github.com/aliyusufergin/yks-sorubank.git
 cd yks-sorubank
