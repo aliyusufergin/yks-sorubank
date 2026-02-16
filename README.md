@@ -12,13 +12,17 @@ YKS sınav hazırlığı için dijital soru havuzu ve çalışma kağıdı oluş
 - 🌙 Açık / Koyu tema
 - ⚙️ Ders, konu ve kitap yönetimi
 
-## Hızlı Kurulum
+---
+
+## Kurulum
 
 ### Docker Hub'dan (En Kolay)
 
 **Gereksinimler:** [Docker Engine](https://docs.docker.com/engine/install/) 20+ ve [Docker Compose](https://docs.docker.com/compose/install/) V2
 
-Herhangi bir klasörde `docker-compose.yml` dosyası oluşturun:
+**1.** Bilgisayarınızda istediğiniz bir yerde yeni bir klasör oluşturun (örneğin `yks-sorubank`).
+
+**2.** Bu klasörün içine `docker-compose.yml` adında bir dosya oluşturun ve aşağıdaki içeriği olduğu gibi yapıştırıp kaydedin:
 
 ```yaml
 services:
@@ -39,13 +43,15 @@ volumes:
   sorubank-data:
 ```
 
+**3.** Bu klasörün bulunduğu konumda bir terminal açın ve şu komutu çalıştırın:
+
 ```bash
 docker compose up -d
 ```
 
-Uygulama `http://localhost:3939` adresinde çalışacaktır.
+**4.** Tarayıcınızda `http://localhost:3939` adresine gidin. Uygulama hazır! 🎉
 
-> **Compose dosyası oluşturmadan tek komutla da çalıştırabilirsiniz:**
+> **Alternatif — Tek komutla** (compose dosyası oluşturmadan):
 >
 > ```bash
 > docker run -d --name yks-sorubank \
@@ -54,6 +60,8 @@ Uygulama `http://localhost:3939` adresinde çalışacaktır.
 >   --restart unless-stopped \
 >   aliyusufergin/yks-sorubank:latest
 > ```
+
+---
 
 ### Kaynak Koddan Docker Build
 
@@ -64,75 +72,67 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-Uygulama `http://localhost:3939` adresinde çalışacaktır.
+---
 
-> **Not:** Uygulama yalnızca kendi bilgisayarınızdan erişilebilir (`127.0.0.1`). Aynı ağdaki diğer cihazlardan (telefon, tablet vb.) erişmek istiyorsanız `docker-compose.yml` dosyasındaki port satırını şu şekilde değiştirin:
->
-> ```yaml
-> ports:
->   - "3939:3000"   # tüm ağdan erişime açar
-> ```
->
-> Ardından `http://<bilgisayarınızın-IP-adresi>:3939` ile erişebilirsiniz. IP adresinizi öğrenmek için terminalde `ip a` (Linux) veya `ipconfig` (Windows) komutunu çalıştırın.
-
-### Doğrudan Kurulum
+### Doğrudan Kurulum (Docker'sız)
 
 **Gereksinimler:** Node.js 20+
 
 ```bash
 git clone https://github.com/aliyusufergin/yks-sorubank.git
 cd yks-sorubank
-
-# Ortam değişkenlerini ayarla
 cp .env.example .env
-
-# Bağımlılıkları kur
 npm install
-
-# Veritabanını oluştur
 npx prisma db push
-
-# Geliştirme sunucusunu başlat
 npm run dev
 ```
 
-### Production Build
+Production build için:
 
 ```bash
 npm run build
 npm start
 ```
 
-## Port Değiştirme
+---
 
-Varsayılan port **3939**'dur. Değiştirmek istersen:
+## Ağ Erişimi ve Port Ayarları
 
-**Docker kullanıyorsan:** `docker-compose.yml` dosyasında `3939` yazan iki yeri değiştir:
+Uygulama varsayılan olarak **3939** portunda ve yalnızca **kendi bilgisayarınızdan** (`127.0.0.1`) erişilebilir şekilde çalışır.
+
+### Aynı ağdaki cihazlardan erişim (telefon, tablet vb.)
+
+`docker-compose.yml` dosyasındaki port satırını şu şekilde değiştirin:
 
 ```yaml
 ports:
-  - "127.0.0.1:YENI_PORT:3000"     # ← sadece soldaki portu değiştir
+  - "3939:3000"       # tüm ağdan erişime açar
+```
+
+Ardından `http://<bilgisayarınızın-IP-adresi>:3939` ile erişebilirsiniz.
+IP adresinizi öğrenmek için: `ip a` (Linux) · `ipconfig` (Windows).
+
+### Port değiştirme
+
+**Docker:** `docker-compose.yml` dosyasında iki yeri güncelleyin:
+
+```yaml
+ports:
+  - "127.0.0.1:YENI_PORT:3000"
 environment:
   - NEXT_PUBLIC_APP_URL=http://localhost:YENI_PORT
 ```
 
-**Doğrudan kurulum kullanıyorsan:** `.env` dosyasında `NEXT_PUBLIC_APP_URL`'yi güncelle ve sunucuyu yeniden başlat:
+**Doğrudan kurulum:** `.env` dosyasını düzenleyin:
 
 ```bash
-# .env dosyasını düzenle
 NEXT_PUBLIC_APP_URL=http://localhost:YENI_PORT
-
-# Sunucuyu istediğin portta başlat
 npx next dev --port YENI_PORT
 ```
 
+---
+
 ## Ortam Değişkenleri
-
-`.env.example` dosyasını `.env` olarak kopyalayın:
-
-```bash
-cp .env.example .env
-```
 
 | Değişken | Açıklama | Varsayılan |
 |----------|----------|------------|
@@ -140,13 +140,15 @@ cp .env.example .env
 | `UPLOAD_DIR` | Yüklenen dosyaların dizini | `./data/uploads` |
 | `NEXT_PUBLIC_APP_URL` | Uygulama URL'si | `http://localhost:3939` |
 
-## AI Entegrasyonu
+---
 
-AI özelliklerini kullanmak için:
+## AI Entegrasyonu
 
 1. [Google AI Studio](https://aistudio.google.com/) üzerinden Gemini API anahtarı alın
 2. Uygulamada **Ayarlar** → **AI API Anahtarı** bölümüne yapıştırın
-3. API anahtarı yalnızca tarayıcınızda (şifreli olarak) saklanır, sunucuya kaydedilmez
+3. API anahtarı yalnızca tarayıcınızda (AES-256 ile şifreli) saklanır, sunucuya kaydedilmez
+
+---
 
 ## Tech Stack
 
