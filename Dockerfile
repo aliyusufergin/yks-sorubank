@@ -15,34 +15,31 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate
 RUN npm run build
-# Create empty DB with correct schema
-RUN mkdir -p /tmp/dbinit && DATABASE_URL="file:/tmp/dbinit/sorubank.db" npx prisma db push
+# Create empty DB with correct schema in temp location
+RUN mkdir -p /tmp/dbinit && DATABASE_URL="file:///tmp/dbinit/sorubank.db" npx prisma db push
 
 # Runner
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
 RUN apk add --no-cache vips-dev
 
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-# Store template OUTSIDE /app/data (volume mount would hide it otherwise)
+# Template DB stored outside /app/data (volume mount would hide it)
 COPY --from=builder /tmp/dbinit/sorubank.db /app/sorubank.db.init
 
-RUN mkdir -p /app/data/uploads && chown -R nextjs:nodejs /app/data
+RUN mkdir -p /app/data/uploads
 
-USER nextjs
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
-ENV DATABASE_URL="file:/app/data/sorubank.db"
+ENV DATABASE_URL="file:///app/data/sorubank.db"
 ENV UPLOAD_DIR="./data/uploads"
 
-# If no DB exists in the volume, copy the template; then start
-CMD ["sh", "-c", "[ -f /app/data/sorubank.db ] || cp /app/sorubank.db.init /app/data/sorubank.db; node server.js"]
+# Copy template if no DB in volume, then start
+CMD ["sh", "-c", "cp -n /app/sorubank.db.init /app/data/sorubank.db 2>/dev/null || true; node server.js"]
