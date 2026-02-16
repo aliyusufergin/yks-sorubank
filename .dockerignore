@@ -2,7 +2,12 @@ node_modules
 .next
 .git
 .agent
+.gemini
 data
 *.md
 .env
 .env.local
+.env*.local
+.gitignore
+GIT_REHBER.md
+DOCKER_REHBER.md

@@ -44,4 +44,4 @@ ENV DATABASE_URL="file:../data/sorubank.db"
 ENV UPLOAD_DIR="./data/uploads"
 
 # Debug: show what's happening, copy template if needed, then start
-CMD ["sh", "-c", "echo \"[init] DB check...\"; ls -la /app/data/ /app/sorubank.db.init 2>&1; cp -n /app/sorubank.db.init /app/data/sorubank.db 2>/dev/null || true; echo \"[init] DB ready:\"; ls -la /app/data/sorubank.db; echo \"[init] Starting server...\"; node server.js"]
+CMD ["sh", "-c", "cp -n /app/sorubank.db.init /app/data/sorubank.db 2>/dev/null || true; node server.js"]
