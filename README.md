@@ -14,15 +14,54 @@ YKS sınav hazırlığı için dijital soru havuzu ve çalışma kağıdı oluş
 
 ## Hızlı Kurulum
 
-### Docker ile (Önerilen)
+### Docker Hub'dan (En Kolay)
 
 **Gereksinimler:** [Docker Engine](https://docs.docker.com/engine/install/) 20+ ve [Docker Compose](https://docs.docker.com/compose/install/) V2
+
+Herhangi bir klasörde `docker-compose.yml` dosyası oluşturun:
+
+```yaml
+services:
+  sorubank:
+    image: aliyusufergin/yks-sorubank:latest
+    container_name: yks-sorubank
+    ports:
+      - "127.0.0.1:3939:3000"
+    volumes:
+      - sorubank-data:/app/data
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=file:../data/sorubank.db
+      - UPLOAD_DIR=./data/uploads
+      - NEXT_PUBLIC_APP_URL=http://localhost:3939
+
+volumes:
+  sorubank-data:
+```
+
+```bash
+docker compose up -d
+```
+
+Uygulama `http://localhost:3939` adresinde çalışacaktır.
+
+> **Compose dosyası oluşturmadan tek komutla da çalıştırabilirsiniz:**
+>
+> ```bash
+> docker run -d --name yks-sorubank \
+>   -p 127.0.0.1:3939:3000 \
+>   -v sorubank-data:/app/data \
+>   --restart unless-stopped \
+>   aliyusufergin/yks-sorubank:latest
+> ```
+
+### Kaynak Koddan Docker Build
 
 ```bash
 git clone https://github.com/aliyusufergin/yks-sorubank.git
 cd yks-sorubank
 cp .env.example .env
-docker compose up -d
+docker compose up -d --build
 ```
 
 Uygulama `http://localhost:3939` adresinde çalışacaktır.
