@@ -27,7 +27,14 @@ docker compose up -d
 
 Uygulama `http://localhost:3939` adresinde çalışacaktır.
 
-> **Not:** Uygulama yalnızca kendi bilgisayarınızdan erişilebilir (`127.0.0.1`). Aynı ağdaki diğer cihazlar erişemez.
+> **Not:** Uygulama yalnızca kendi bilgisayarınızdan erişilebilir (`127.0.0.1`). Aynı ağdaki diğer cihazlardan (telefon, tablet vb.) erişmek istiyorsanız `docker-compose.yml` dosyasındaki port satırını şu şekilde değiştirin:
+>
+> ```yaml
+> ports:
+>   - "3939:3000"   # tüm ağdan erişime açar
+> ```
+>
+> Ardından `http://<bilgisayarınızın-IP-adresi>:3939` ile erişebilirsiniz. IP adresinizi öğrenmek için terminalde `ip a` (Linux) veya `ipconfig` (Windows) komutunu çalıştırın.
 
 ### Doğrudan Kurulum
 
