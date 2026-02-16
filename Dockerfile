@@ -22,7 +22,7 @@ RUN mkdir -p /tmp/dbinit && DATABASE_URL="file:/tmp/dbinit/sorubank.db" npx pris
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-RUN apk add --no-cache vips-dev
+RUN apk upgrade --no-cache && apk add --no-cache vips
 
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
