@@ -25,7 +25,9 @@ cp .env.example .env
 docker compose up -d
 ```
 
-Uygulama `http://localhost:3000` adresinde çalışacaktır.
+Uygulama `http://localhost:3939` adresinde çalışacaktır.
+
+> **Not:** Uygulama yalnızca kendi bilgisayarınızdan erişilebilir (`127.0.0.1`). Aynı ağdaki diğer cihazlar erişemez.
 
 ### Doğrudan Kurulum
 
@@ -55,6 +57,29 @@ npm run build
 npm start
 ```
 
+## Port Değiştirme
+
+Varsayılan port **3939**'dur. Değiştirmek istersen:
+
+**Docker kullanıyorsan:** `docker-compose.yml` dosyasında `3939` yazan iki yeri değiştir:
+
+```yaml
+ports:
+  - "127.0.0.1:YENI_PORT:3000"     # ← sadece soldaki portu değiştir
+environment:
+  - NEXT_PUBLIC_APP_URL=http://localhost:YENI_PORT
+```
+
+**Doğrudan kurulum kullanıyorsan:** `.env` dosyasında `NEXT_PUBLIC_APP_URL`'yi güncelle ve sunucuyu yeniden başlat:
+
+```bash
+# .env dosyasını düzenle
+NEXT_PUBLIC_APP_URL=http://localhost:YENI_PORT
+
+# Sunucuyu istediğin portta başlat
+npx next dev --port YENI_PORT
+```
+
 ## Ortam Değişkenleri
 
 `.env.example` dosyasını `.env` olarak kopyalayın:
@@ -67,7 +92,7 @@ cp .env.example .env
 |----------|----------|------------|
 | `DATABASE_URL` | SQLite veritabanı yolu | `file:../data/sorubank.db` |
 | `UPLOAD_DIR` | Yüklenen dosyaların dizini | `./data/uploads` |
-| `NEXT_PUBLIC_APP_URL` | Uygulama URL'si | `http://localhost:3000` |
+| `NEXT_PUBLIC_APP_URL` | Uygulama URL'si | `http://localhost:3939` |
 
 ## AI Entegrasyonu
 
