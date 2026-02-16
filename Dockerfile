@@ -16,7 +16,7 @@ COPY . .
 RUN npx prisma generate
 RUN npm run build
 # Create empty DB with correct schema in temp location
-RUN mkdir -p /tmp/dbinit && DATABASE_URL="file:///tmp/dbinit/sorubank.db" npx prisma db push
+RUN mkdir -p /tmp/dbinit && DATABASE_URL="file:/tmp/dbinit/sorubank.db" npx prisma db push
 
 # Runner
 FROM base AS runner
@@ -38,8 +38,10 @@ RUN mkdir -p /app/data/uploads
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
-ENV DATABASE_URL="file:///app/data/sorubank.db"
+# Prisma file: prefix is NOT standard URI. Just strip "file:" and use the rest as path.
+# Relative to prisma/schema.prisma → ../data/sorubank.db → /app/data/sorubank.db
+ENV DATABASE_URL="file:../data/sorubank.db"
 ENV UPLOAD_DIR="./data/uploads"
 
-# Copy template if no DB in volume, then start
-CMD ["sh", "-c", "cp -n /app/sorubank.db.init /app/data/sorubank.db 2>/dev/null || true; node server.js"]
+# Debug: show what's happening, copy template if needed, then start
+CMD ["sh", "-c", "echo \"[init] DB check...\"; ls -la /app/data/ /app/sorubank.db.init 2>&1; cp -n /app/sorubank.db.init /app/data/sorubank.db 2>/dev/null || true; echo \"[init] DB ready:\"; ls -la /app/data/sorubank.db; echo \"[init] Starting server...\"; node server.js"]

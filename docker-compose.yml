@@ -8,7 +8,7 @@ services:
       - sorubank-data:/app/data
     restart: unless-stopped
     environment:
-      - DATABASE_URL=file:./data/sorubank.db
+      - DATABASE_URL=file:../data/sorubank.db
       - UPLOAD_DIR=./data/uploads
       - NEXT_PUBLIC_APP_URL=http://localhost:3000
 
