@@ -28,6 +28,9 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 RUN mkdir -p /app/data/uploads && chown -R nextjs:nodejs /app/data
 
@@ -38,4 +41,4 @@ ENV HOSTNAME="0.0.0.0"
 ENV DATABASE_URL="file:./data/sorubank.db"
 ENV UPLOAD_DIR="./data/uploads"
 
-CMD ["sh", "-c", "npx prisma db push --skip-generate && node server.js"]
+CMD ["sh", "-c", "npx prisma db push && node server.js"]
