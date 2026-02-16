@@ -41,4 +41,4 @@ ENV HOSTNAME="0.0.0.0"
 ENV DATABASE_URL="file:./data/sorubank.db"
 ENV UPLOAD_DIR="./data/uploads"
 
-CMD ["sh", "-c", "npx prisma db push && node server.js"]
+CMD ["sh", "-c", "node ./node_modules/prisma/build/index.js db push && node server.js"]
