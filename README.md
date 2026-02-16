@@ -17,7 +17,7 @@ YKS sınav hazırlığı için dijital soru havuzu ve çalışma kağıdı oluş
 ### Docker ile (Önerilen)
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/aliyusufergin/yks-sorubank.git
 cd yks-sorubank
 cp .env.example .env
 docker compose up -d
@@ -30,7 +30,7 @@ Uygulama `http://localhost:3000` adresinde çalışacaktır.
 **Gereksinimler:** Node.js 20+
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/aliyusufergin/yks-sorubank.git
 cd yks-sorubank
 
 # Ortam değişkenlerini ayarla
@@ -86,4 +86,4 @@ AI özelliklerini kullanmak için:
 
 ## Lisans
 
-MIT
+Bu proje [GNU Affero General Public License v3.0 (AGPLv3)](LICENSE) altında lisanslanmıştır.
