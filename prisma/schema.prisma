@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Question {
+  id             String   @id @default(uuid())
+  fileId         String
+  fileUrl        String
+  lesson         String
+  subject        String?
+  rating         Int      @default(0)
+  status         String   @default("ACTIVE")
+  source         String?
+  pageNumber     Int?
+  questionNumber Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  worksheets WorksheetQuestion[]
+  analysis   QuestionAnalysis?
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([lesson])
+  @@index([status, lesson])
+}
+
+model Worksheet {
+  id        String   @id @default(uuid())
+  title     String
+  name      String?
+  createdAt DateTime @default(now())
+
+  questions WorksheetQuestion[]
+
+  @@index([createdAt(sort: Desc)])
+}
+
+model WorksheetQuestion {
+  worksheetId String
+  questionId  String
+  order       Int      @default(0)
+
+  worksheet Worksheet @relation(fields: [worksheetId], references: [id], onDelete: Cascade)
+  question  Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@id([worksheetId, questionId])
+  @@index([questionId])
+}
+
+model Lesson {
+  id   String @id @default(uuid())
+  name String @unique
+
+  subjects Subject[]
+}
+
+model Subject {
+  id       String @id @default(uuid())
+  name     String
+  lessonId String
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([name, lessonId])
+}
+
+model Book {
+  id   String @id @default(uuid())
+  name String @unique
+}
+
+model QuestionAnalysis {
+  id         String   @id @default(uuid())
+  questionId String   @unique
+  lesson     String
+  subject    String?
+  topics     String   @default("[]") // JSON array
+  difficulty String   @default("Orta")
+  summary    String   @default("")
+  solution   String   @default("")
+  createdAt  DateTime @default(now())
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model AIPrompt {
+  id      String  @id @default(uuid())
+  lesson  String
+  subject String  @default("__default__")
+  prompt  String
+
+  @@unique([lesson, subject])
+}

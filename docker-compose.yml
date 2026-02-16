@@ -1,0 +1,16 @@
+services:
+  sorubank:
+    build: .
+    container_name: yks-sorubank
+    ports:
+      - "3000:3000"
+    volumes:
+      - sorubank-data:/app/data
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=file:./data/sorubank.db
+      - UPLOAD_DIR=./data/uploads
+      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+volumes:
+  sorubank-data:
