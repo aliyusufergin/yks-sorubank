@@ -76,7 +76,7 @@ docker compose up -d --build
 
 ### Doğrudan Kurulum (Docker'sız)
 
-**Gereksinimler:** Node.js 20+
+**Gereksinimler:** Node.js 25+
 
 ```bash
 git clone https://github.com/aliyusufergin/yks-sorubank.git
