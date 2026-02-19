@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readFile } from "fs/promises";
-import { join } from "path";
+import { join, resolve } from "path";
 
-const UPLOAD_DIR = process.env.UPLOAD_DIR || "./data/uploads";
+const UPLOAD_DIR = resolve(process.env.UPLOAD_DIR || "./data/uploads");
 
 export async function GET(
     _request: NextRequest,
@@ -11,8 +11,13 @@ export async function GET(
     const { path } = await params;
     const fileName = path.join("/");
 
+    // Prevent path traversal
+    const filePath = resolve(join(UPLOAD_DIR, fileName));
+    if (!filePath.startsWith(UPLOAD_DIR)) {
+        return NextResponse.json({ error: "Geçersiz dosya yolu" }, { status: 400 });
+    }
+
     try {
-        const filePath = join(UPLOAD_DIR, fileName);
         const file = await readFile(filePath);
 
         const ext = fileName.split(".").pop()?.toLowerCase();

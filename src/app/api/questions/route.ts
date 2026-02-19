@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
                 status: true,
                 pageNumber: true,
                 questionNumber: true,
+                answer: true,
                 createdAt: true,
                 analysis: { select: { id: true } },
             },
@@ -82,6 +83,7 @@ export async function GET(request: NextRequest) {
                 status: true,
                 pageNumber: true,
                 questionNumber: true,
+                answer: true,
                 createdAt: true,
             },
             take: limit,
@@ -102,9 +104,28 @@ export async function POST(request: NextRequest) {
     const questionNumber = formData.get("questionNumber")
         ? parseInt(formData.get("questionNumber") as string)
         : null;
+    const answer = (formData.get("answer") as string) || null;
 
     if (!files.length || !lesson) {
         return NextResponse.json({ error: "Dosya ve ders gerekli" }, { status: 400 });
+    }
+
+    // Validate file types and sizes
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/heic", "image/heif"];
+    const maxFileSize = 10 * 1024 * 1024; // 10MB per file
+    for (const file of files) {
+        if (!allowedTypes.includes(file.type)) {
+            return NextResponse.json(
+                { error: `Desteklenmeyen dosya türü: ${file.type}. Sadece resim dosyaları kabul edilir.` },
+                { status: 400 }
+            );
+        }
+        if (file.size > maxFileSize) {
+            return NextResponse.json(
+                { error: `Dosya boyutu çok büyük (max 5MB): ${file.name}` },
+                { status: 400 }
+            );
+        }
     }
 
     await mkdir(UPLOAD_DIR, { recursive: true });
@@ -135,6 +156,7 @@ export async function POST(request: NextRequest) {
                     source,
                     pageNumber,
                     questionNumber,
+                    answer,
                 },
             });
 

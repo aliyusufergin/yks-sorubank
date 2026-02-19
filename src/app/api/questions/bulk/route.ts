@@ -8,6 +8,11 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "ID listesi ve durum gerekli" }, { status: 400 });
     }
 
+    const allowedStatuses = ["ACTIVE", "MASTERED"];
+    if (!allowedStatuses.includes(status)) {
+        return NextResponse.json({ error: "Geçersiz durum" }, { status: 400 });
+    }
+
     await prisma.question.updateMany({
         where: { id: { in: ids } },
         data: { status },

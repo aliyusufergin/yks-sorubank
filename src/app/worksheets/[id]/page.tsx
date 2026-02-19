@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
-import { Printer, ArrowLeft, Loader2 } from "lucide-react";
+import { Printer, ArrowLeft, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 
 interface WorksheetDetail {
@@ -15,8 +15,10 @@ interface WorksheetDetail {
             fileUrl: string;
             lesson: string;
             subject: string | null;
+            source: string | null;
             pageNumber: number | null;
             questionNumber: number | null;
+            answer: string | null;
         };
     }[];
 }
@@ -25,6 +27,7 @@ export default function WorksheetDetailPage({ params }: { params: Promise<{ id: 
     const { id } = use(params);
     const [worksheet, setWorksheet] = useState<WorksheetDetail | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [showAnswerKey, setShowAnswerKey] = useState(false);
 
     useEffect(() => {
         fetch(`/api/worksheets/${id}`)
@@ -89,13 +92,9 @@ export default function WorksheetDetailPage({ params }: { params: Promise<{ id: 
                 <div className="p-6 grid grid-cols-2 gap-4">
                     {worksheet.questions.map((wq, index) => (
                         <div key={wq.question.id} className="border border-gray-200 rounded-lg overflow-hidden">
-                            <div className="bg-gray-50 px-3 py-1.5 flex items-center justify-between border-b border-gray-200">
+                            <div className="bg-gray-50 px-3 py-1.5 border-b border-gray-200">
                                 <span className="text-xs font-bold text-gray-700">
                                     Soru {index + 1}
-                                </span>
-                                <span className="text-xs text-gray-500">
-                                    {wq.question.lesson}
-                                    {wq.question.subject ? ` – ${wq.question.subject}` : ""}
                                 </span>
                             </div>
                             <div className="p-2">
@@ -105,16 +104,57 @@ export default function WorksheetDetailPage({ params }: { params: Promise<{ id: 
                                     className="w-full object-contain"
                                 />
                             </div>
-                            {(wq.question.pageNumber || wq.question.questionNumber) && (
-                                <div className="px-3 py-1 text-xs text-gray-400 border-t border-gray-100">
-                                    {wq.question.pageNumber && `S.${wq.question.pageNumber}`}
-                                    {wq.question.pageNumber && wq.question.questionNumber && " / "}
-                                    {wq.question.questionNumber && `#${wq.question.questionNumber}`}
-                                </div>
-                            )}
                         </div>
                     ))}
                 </div>
+            </div>
+
+            {/* Answer Key (no-print) */}
+            <div className="no-print mx-auto max-w-[210mm]">
+                <button
+                    onClick={() => setShowAnswerKey(!showAnswerKey)}
+                    className="w-full flex items-center justify-between rounded-xl bg-[var(--color-bg-elevated)] border border-[var(--color-border)] px-5 py-3 text-sm font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-elevated)]/80 transition-colors"
+                >
+                    <span>🔑 Cevap Anahtarı</span>
+                    {showAnswerKey ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                </button>
+                {showAnswerKey && (
+                    <div className="mt-2 rounded-xl bg-[var(--color-bg-elevated)] border border-[var(--color-border)] p-4 overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="border-b border-[var(--color-border)]">
+                                    <th className="text-left py-2 px-3 text-[var(--color-text-secondary)] font-medium">Soru</th>
+                                    <th className="text-left py-2 px-3 text-[var(--color-text-secondary)] font-medium">Ders</th>
+                                    <th className="text-left py-2 px-3 text-[var(--color-text-secondary)] font-medium">Konu</th>
+                                    <th className="text-left py-2 px-3 text-[var(--color-text-secondary)] font-medium">Kaynak</th>
+                                    <th className="text-left py-2 px-3 text-[var(--color-text-secondary)] font-medium">Cevap</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {worksheet.questions.map((wq, index) => (
+                                    <tr key={wq.question.id} className="border-b border-[var(--color-border)]/50 last:border-0">
+                                        <td className="py-2 px-3 text-[var(--color-text-primary)] font-medium">Soru {index + 1}</td>
+                                        <td className="py-2 px-3 text-[var(--color-text-secondary)]">{wq.question.lesson}</td>
+                                        <td className="py-2 px-3 text-[var(--color-text-secondary)]">{wq.question.subject || "—"}</td>
+                                        <td className="py-2 px-3 text-[var(--color-text-muted)]">
+                                            {wq.question.source || ""}
+                                            {(wq.question.pageNumber || wq.question.questionNumber) && (
+                                                <span className="ml-1 text-xs">
+                                                    {wq.question.pageNumber && `S.${wq.question.pageNumber}`}
+                                                    {wq.question.pageNumber && wq.question.questionNumber && " / "}
+                                                    {wq.question.questionNumber && `#${wq.question.questionNumber}`}
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="py-2 px-3 font-semibold text-[var(--color-brand-light)]">
+                                            {wq.question.answer || "—"}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
         </div>
     );

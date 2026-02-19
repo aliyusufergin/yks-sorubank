@@ -4,6 +4,9 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Archive, RotateCcw, Loader2, Sparkles, X } from "lucide-react";
 import { QuestionCard } from "@/components/QuestionCard";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
+import dynamic from "next/dynamic";
+
+const EditQuestionModal = dynamic(() => import("@/components/EditQuestionModal"), { ssr: false });
 
 interface Question {
     id: string;
@@ -40,6 +43,9 @@ export default function ArchivePage() {
     const [aiResult, setAiResult] = useState<AIAnalysis | null>(null);
     const [aiLoading, setAiLoading] = useState(false);
     const [aiError, setAiError] = useState("");
+
+    // Edit question modal
+    const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
 
     const fetchQuestions = useCallback(async () => {
         setIsLoading(true);
@@ -149,6 +155,11 @@ export default function ArchivePage() {
         }
     }, [questions]);
 
+    const handleEdit = useCallback((questionProps: { id: string }) => {
+        const q = questions.find((q) => q.id === questionProps.id);
+        if (q) setEditingQuestion(q);
+    }, [questions]);
+
     return (
         <div className="space-y-8">
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[var(--color-success)]/10 via-transparent to-transparent border border-[var(--color-border)] p-6 md:p-8">
@@ -187,6 +198,7 @@ export default function ArchivePage() {
                             onDelete={handleDelete}
                             onStatusChange={handleStatusChange}
                             onAISolve={handleAISolve}
+                            onEdit={handleEdit}
                         />
                     ))}
                 </div>
@@ -267,6 +279,16 @@ export default function ArchivePage() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Edit Question Modal */}
+            {editingQuestion && (
+                <EditQuestionModal
+                    isOpen={!!editingQuestion}
+                    onClose={() => setEditingQuestion(null)}
+                    onSuccess={fetchQuestions}
+                    question={editingQuestion}
+                />
             )}
         </div>
     );

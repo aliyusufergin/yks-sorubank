@@ -18,6 +18,7 @@ model Question {
   source         String?
   pageNumber     Int?
   questionNumber Int?
+  answer         String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

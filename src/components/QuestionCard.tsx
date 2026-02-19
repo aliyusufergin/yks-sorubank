@@ -2,7 +2,7 @@
 
 import { memo, useState } from "react";
 import Image from "next/image";
-import { Check, Sparkles, FileText, Trash2, Brain } from "lucide-react";
+import { Check, Sparkles, FileText, Trash2, Brain, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface QuestionCardProps {
@@ -20,6 +20,7 @@ interface QuestionCardProps {
     onDelete: (id: string) => void;
     onStatusChange: (id: string, status: string) => void;
     onAISolve: (id: string) => void;
+    onEdit: (question: QuestionCardProps) => void;
 }
 
 function QuestionCardInner({
@@ -37,6 +38,7 @@ function QuestionCardInner({
     onDelete,
     onStatusChange,
     onAISolve,
+    onEdit,
 }: QuestionCardProps) {
     const [aspectRatio, setAspectRatio] = useState<string>("");
 
@@ -148,6 +150,16 @@ function QuestionCardInner({
                         )}
                     >
                         {status === "MASTERED" ? "✓ Öğrenildi" : "Arşive Taşı"}
+                    </button>
+                    <button
+                        onClick={() => onEdit({
+                            id, fileUrl, lesson, subject, source, status,
+                            pageNumber, questionNumber, hasAnalysis, isSelected,
+                            onSelect, onDelete, onStatusChange, onAISolve, onEdit,
+                        })}
+                        className="rounded-md p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-brand)] hover:bg-[var(--color-brand)]/10 transition-all"
+                    >
+                        <Pencil size={14} />
                     </button>
                     <button
                         onClick={() => onDelete(id)}

@@ -2,7 +2,7 @@ FROM node:25-alpine AS base
 
 # Dependencies
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
+RUN apk upgrade --no-cache && apk add --no-cache libc6-compat
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY prisma ./prisma/

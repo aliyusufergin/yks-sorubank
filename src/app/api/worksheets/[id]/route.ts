@@ -31,9 +31,20 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
+    // Whitelist allowed fields
+    const allowedFields = ["title", "name"];
+    const data: Record<string, unknown> = {};
+    for (const key of allowedFields) {
+        if (key in body) data[key] = body[key];
+    }
+
+    if (Object.keys(data).length === 0) {
+        return NextResponse.json({ error: "Geçerli alan bulunamadı" }, { status: 400 });
+    }
+
     const worksheet = await prisma.worksheet.update({
         where: { id },
-        data: body,
+        data,
     });
 
     return NextResponse.json(worksheet);

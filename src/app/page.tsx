@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 
 const UploadModal = dynamic(() => import("@/components/UploadModal"), { ssr: false });
 const FilterModal = dynamic(() => import("@/components/FilterModal"), { ssr: false });
+const EditQuestionModal = dynamic(() => import("@/components/EditQuestionModal"), { ssr: false });
 
 interface Question {
     id: string;
@@ -19,6 +20,7 @@ interface Question {
     status: string;
     pageNumber: number | null;
     questionNumber: number | null;
+    answer: string | null;
     analysis: { id: string } | null;
 }
 
@@ -54,6 +56,9 @@ export default function DashboardPage() {
     const [aiResult, setAiResult] = useState<AIAnalysis | null>(null);
     const [aiLoading, setAiLoading] = useState(false);
     const [aiError, setAiError] = useState("");
+
+    // Edit question modal
+    const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
 
     const fetchQuestions = useCallback(async () => {
         setIsLoading(true);
@@ -221,6 +226,11 @@ export default function DashboardPage() {
         }
     }, [questions]);
 
+    const handleEdit = useCallback((questionProps: { id: string; lesson: string; subject?: string | null; source?: string | null; pageNumber?: number | null; questionNumber?: number | null }) => {
+        const q = questions.find((q) => q.id === questionProps.id);
+        if (q) setEditingQuestion(q);
+    }, [questions]);
+
     const activeFilterCount = Object.values(filters).filter(Boolean).length;
 
     return (
@@ -281,6 +291,7 @@ export default function DashboardPage() {
                             onDelete={handleDelete}
                             onStatusChange={handleStatusChange}
                             onAISolve={handleAISolve}
+                            onEdit={handleEdit}
                         />
                     ))}
                 </div>
@@ -430,6 +441,14 @@ export default function DashboardPage() {
             {/* Modals */}
             <UploadModal isOpen={isUploadOpen} onClose={() => setIsUploadOpen(false)} onSuccess={fetchQuestions} />
             <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} onApply={setFilters} currentFilters={filters} />
+            {editingQuestion && (
+                <EditQuestionModal
+                    isOpen={!!editingQuestion}
+                    onClose={() => setEditingQuestion(null)}
+                    onSuccess={fetchQuestions}
+                    question={editingQuestion}
+                />
+            )}
         </div>
     );
 }
