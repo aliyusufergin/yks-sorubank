@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { mkdir } from "fs/promises";
 import { join } from "path";
-import { processAndSave } from "@/lib/imageProcessing";
+import sharp from "sharp";
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || "./data/uploads";
 const DEFAULT_LIMIT = 50;
@@ -139,8 +139,13 @@ export async function POST(request: NextRequest) {
             const fileName = `${fileId}.webp`;
             const filePath = join(UPLOAD_DIR, fileName);
 
-            // Document-scan pipeline: beyaz arka plan, net siyah metin
-            await processAndSave(buffer, filePath);
+            // Image pipeline: resize, grayscale, contrast, webp
+            await sharp(buffer)
+                .resize({ width: 2000, withoutEnlargement: true })
+                .grayscale()
+                .linear(1.3, -30) // Contrast boost for scanned paper look
+                .webp({ quality: 85 })
+                .toFile(filePath);
 
             const question = await prisma.question.create({
                 data: {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Plus, Filter, Archive, FileText, BookOpen, Loader2, X, Sparkles, Calendar, Trash, CheckSquare, Dices, RefreshCw } from "lucide-react";
+import { Plus, Filter, Archive, FileText, BookOpen, Loader2, X, Sparkles, Calendar, Trash, CheckSquare, Dices } from "lucide-react";
 import { QuestionCard } from "@/components/QuestionCard";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import dynamic from "next/dynamic";
@@ -64,7 +64,6 @@ export default function DashboardPage() {
     const [showRandomPopover, setShowRandomPopover] = useState(false);
     const [randomCount, setRandomCount] = useState("5");
     const [isSelectingAll, setIsSelectingAll] = useState(false);
-    const [isReprocessing, setIsReprocessing] = useState(false);
     const [isSelectingRandom, setIsSelectingRandom] = useState(false);
 
     const fetchQuestions = useCallback(async () => {
@@ -224,28 +223,6 @@ export default function DashboardPage() {
         setWorksheetTitle(`Çalışma Kağıdı - ${new Date().toLocaleDateString("tr-TR")}`);
         setShowTitleModal(true);
         setTimeout(() => titleInputRef.current?.select(), 100);
-    };
-
-    const handleReprocess = async () => {
-        setIsReprocessing(true);
-        try {
-            const res = await fetch("/api/questions/reprocess", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ids: Array.from(selectedIds) }),
-            });
-            const data = await res.json();
-            if (data.success) {
-                alert(`✅ ${data.processed} görsel başarıyla optimize edildi${data.failed ? `, ${data.failed} hata` : ""}`);
-                fetchQuestions();
-            } else {
-                alert(`❌ Hata: ${data.error}`);
-            }
-        } catch {
-            alert("❌ İşlem sırasında bir hata oluştu");
-        } finally {
-            setIsReprocessing(false);
-        }
     };
 
     const handleCreateWorksheet = async () => {
@@ -446,15 +423,6 @@ export default function DashboardPage() {
                     >
                         <Sparkles size={14} />
                         AI Tavsiye
-                    </button>
-                    <button
-                        onClick={handleReprocess}
-                        disabled={isReprocessing}
-                        className="btn-secondary flex items-center gap-2 text-sm py-2 whitespace-nowrap"
-                        title="Seçili soruların görsellerini yazdırmaya uygun hale getir"
-                    >
-                        <RefreshCw size={14} className={isReprocessing ? "animate-spin" : ""} />
-                        {isReprocessing ? "İşleniyor..." : "Görselleri Optimize Et"}
                     </button>
                     <button
                         onClick={handleClearCache}
