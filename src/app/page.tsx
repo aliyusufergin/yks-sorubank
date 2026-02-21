@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Plus, Filter, Archive, FileText, BookOpen, Loader2, X, Sparkles, Calendar, Trash } from "lucide-react";
+import { Plus, Filter, Archive, FileText, BookOpen, Loader2, X, Sparkles, Calendar, Trash, CheckSquare, Dices } from "lucide-react";
 import { QuestionCard } from "@/components/QuestionCard";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import dynamic from "next/dynamic";
@@ -59,6 +59,12 @@ export default function DashboardPage() {
 
     // Edit question modal
     const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
+
+    // Random select popover
+    const [showRandomPopover, setShowRandomPopover] = useState(false);
+    const [randomCount, setRandomCount] = useState("5");
+    const [isSelectingAll, setIsSelectingAll] = useState(false);
+    const [isSelectingRandom, setIsSelectingRandom] = useState(false);
 
     const fetchQuestions = useCallback(async () => {
         setIsLoading(true);
@@ -119,6 +125,53 @@ export default function DashboardPage() {
             return next;
         });
     }, []);
+
+    const handleSelectAll = useCallback(async () => {
+        if (selectedIds.size > 0) {
+            setSelectedIds(new Set());
+            return;
+        }
+        setIsSelectingAll(true);
+        try {
+            const params = new URLSearchParams();
+            params.set("status", "ACTIVE");
+            if (filters.lesson) params.set("lesson", filters.lesson);
+            if (filters.subject) params.set("subject", filters.subject);
+            if (filters.source) params.set("source", filters.source);
+            if (filters.hasAnalysis) params.set("hasAnalysis", filters.hasAnalysis);
+            const res = await fetch(`/api/questions/ids?${params}`);
+            const data = await res.json();
+            setSelectedIds(new Set(data.ids));
+        } catch (error) {
+            console.error("Select all error:", error);
+        } finally {
+            setIsSelectingAll(false);
+        }
+    }, [selectedIds.size, filters]);
+
+    const handleRandomSelect = useCallback(async () => {
+        const count = parseInt(randomCount);
+        if (!count || count < 1) return;
+        setIsSelectingRandom(true);
+        try {
+            const params = new URLSearchParams();
+            params.set("status", "ACTIVE");
+            params.set("random", "true");
+            params.set("count", String(count));
+            if (filters.lesson) params.set("lesson", filters.lesson);
+            if (filters.subject) params.set("subject", filters.subject);
+            if (filters.source) params.set("source", filters.source);
+            if (filters.hasAnalysis) params.set("hasAnalysis", filters.hasAnalysis);
+            const res = await fetch(`/api/questions/ids?${params}`);
+            const data = await res.json();
+            setSelectedIds(new Set(data.ids));
+            setShowRandomPopover(false);
+        } catch (error) {
+            console.error("Random select error:", error);
+        } finally {
+            setIsSelectingRandom(false);
+        }
+    }, [randomCount, filters]);
 
     const handleDelete = useCallback(async (id: string) => {
         if (!confirm("Bu soruyu silmek istediğinize emin misiniz?")) return;
@@ -263,6 +316,48 @@ export default function DashboardPage() {
                         </span>
                     )}
                 </button>
+                <button
+                    onClick={handleSelectAll}
+                    disabled={isSelectingAll}
+                    className="btn-secondary flex items-center gap-2"
+                >
+                    {isSelectingAll ? <Loader2 size={16} className="animate-spin" /> : <CheckSquare size={16} />}
+                    {selectedIds.size > 0 ? "Seçimi Kaldır" : "Tümünü Seç"}
+                </button>
+                <div className="relative">
+                    <button
+                        onClick={() => setShowRandomPopover(!showRandomPopover)}
+                        className="btn-secondary flex items-center gap-2"
+                    >
+                        <Dices size={16} />
+                        Rastgele Seç
+                    </button>
+                    {showRandomPopover && (
+                        <div className="absolute top-full left-0 mt-2 z-30 glass-card p-3 shadow-xl space-y-2 min-w-[200px]">
+                            <label className="block text-xs font-medium text-[var(--color-text-secondary)]">Kaç soru seçilsin?</label>
+                            <input
+                                type="number"
+                                min="1"
+                                value={randomCount}
+                                onChange={(e) => setRandomCount(e.target.value)}
+                                onKeyDown={(e) => e.key === "Enter" && handleRandomSelect()}
+                                className="input-field text-sm"
+                                autoFocus
+                            />
+                            <div className="flex gap-2">
+                                <button onClick={() => setShowRandomPopover(false)} className="btn-secondary flex-1 text-xs py-1.5">İptal</button>
+                                <button
+                                    onClick={handleRandomSelect}
+                                    disabled={isSelectingRandom}
+                                    className="btn-primary flex-1 text-xs py-1.5 flex items-center justify-center gap-1"
+                                >
+                                    {isSelectingRandom && <Loader2 size={12} className="animate-spin" />}
+                                    Seç
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
                 <span className="text-sm text-[var(--color-text-muted)] ml-auto">
                     {questions.length} soru
                 </span>

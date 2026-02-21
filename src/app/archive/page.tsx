@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Archive, RotateCcw, Loader2, Sparkles, X } from "lucide-react";
+import { Archive, RotateCcw, Loader2, Sparkles, X, CheckSquare } from "lucide-react";
 import { QuestionCard } from "@/components/QuestionCard";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import dynamic from "next/dynamic";
@@ -47,6 +47,9 @@ export default function ArchivePage() {
     // Edit question modal
     const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
 
+    // Select all loading
+    const [isSelectingAll, setIsSelectingAll] = useState(false);
+
     const fetchQuestions = useCallback(async () => {
         setIsLoading(true);
         const res = await fetch("/api/questions?status=MASTERED");
@@ -90,6 +93,23 @@ export default function ArchivePage() {
             return next;
         });
     }, []);
+
+    const handleSelectAll = useCallback(async () => {
+        if (selectedIds.size > 0) {
+            setSelectedIds(new Set());
+            return;
+        }
+        setIsSelectingAll(true);
+        try {
+            const res = await fetch("/api/questions/ids?status=MASTERED");
+            const data = await res.json();
+            setSelectedIds(new Set(data.ids));
+        } catch (error) {
+            console.error("Select all error:", error);
+        } finally {
+            setIsSelectingAll(false);
+        }
+    }, [selectedIds.size]);
 
     const handleDelete = useCallback(async (id: string) => {
         if (!confirm("Bu soruyu silmek istediğinize emin misiniz?")) return;
@@ -172,9 +192,19 @@ export default function ArchivePage() {
                 </p>
             </div>
 
-            <span className="text-sm text-[var(--color-text-muted)]">
-                {questions.length} soru arşivde
-            </span>
+            <div className="flex flex-wrap items-center gap-3">
+                <button
+                    onClick={handleSelectAll}
+                    disabled={isSelectingAll}
+                    className="btn-secondary flex items-center gap-2"
+                >
+                    {isSelectingAll ? <Loader2 size={16} className="animate-spin" /> : <CheckSquare size={16} />}
+                    {selectedIds.size > 0 ? "Seçimi Kaldır" : "Tümünü Seç"}
+                </button>
+                <span className="text-sm text-[var(--color-text-muted)] ml-auto">
+                    {questions.length} soru arşivde
+                </span>
+            </div>
 
             {isLoading ? (
                 <div className="flex items-center justify-center py-20">
