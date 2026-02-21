@@ -109,6 +109,8 @@ export async function POST(request: NextRequest) {
     // Image processing toggles (default to true for backward compatibility)
     const useGrayscale = formData.get("grayscale") !== "false";
     const useContrastBoost = formData.get("contrastBoost") !== "false";
+    const useWhitenBg = formData.get("whitenBg") === "true";
+    const scanStrength = Math.min(10, Math.max(1, parseInt(formData.get("scanStrength") as string) || 8));
     const useConvertWebp = formData.get("convertWebp") !== "false";
 
     if (!files.length || !lesson) {
@@ -154,6 +156,16 @@ export async function POST(request: NextRequest) {
             }
             if (useContrastBoost) {
                 pipeline = pipeline.linear(1.3, -30);
+            }
+            if (useWhitenBg) {
+                // Document scan: strength 1-10 maps to linear parameters
+                // a (multiplier): 1.125 → 2.25  |  b (offset): -7.5 → -75
+                // Level 8 ≈ linear(2.0, -60) which user approved
+                const a = 1.0 + scanStrength * 0.125;
+                const b = scanStrength * -7.5;
+                pipeline = pipeline
+                    .normalize()
+                    .linear(a, b);
             }
             if (useConvertWebp) {
                 pipeline = pipeline.webp({ quality: 85 });

@@ -28,6 +28,8 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
     const [books, setBooks] = useState<{ id: string; name: string }[]>([]);
     const [grayscale, setGrayscale] = useState(true);
     const [contrastBoost, setContrastBoost] = useState(true);
+    const [whitenBg, setWhitenBg] = useState(false);
+    const [scanStrength, setScanStrength] = useState("8");
     const [convertWebp, setConvertWebp] = useState(true);
 
     useEffect(() => {
@@ -61,6 +63,8 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
         if (answer) formData.append("answer", answer);
         formData.append("grayscale", String(grayscale));
         formData.append("contrastBoost", String(contrastBoost));
+        formData.append("whitenBg", String(whitenBg));
+        if (whitenBg) formData.append("scanStrength", scanStrength);
         formData.append("convertWebp", String(convertWebp));
 
         try {
@@ -132,7 +136,7 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
                         <label className="flex items-center justify-between cursor-pointer">
                             <div>
                                 <span className="text-sm text-[var(--color-text-primary)]">Gri Tonlama</span>
-                                <p className="text-xs text-[var(--color-text-muted)]">Görseli siyah-beyaz yapar</p>
+                                <p className="text-xs text-[var(--color-text-muted)]">Renkli görseli siyah-beyaza çevirir</p>
                             </div>
                             <div className="relative">
                                 <input type="checkbox" checked={grayscale} onChange={(e) => setGrayscale(e.target.checked)} className="sr-only peer" />
@@ -143,14 +147,45 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
                         <label className="flex items-center justify-between cursor-pointer">
                             <div>
                                 <span className="text-sm text-[var(--color-text-primary)]">Kontrast Artırma</span>
-                                <p className="text-xs text-[var(--color-text-muted)]">Taranmış kağıt efekti verir</p>
+                                <p className="text-xs text-[var(--color-text-muted)]">Hafif işleme — yazı ve arka plan arasındaki farkı belirginleştirir</p>
                             </div>
                             <div className="relative">
-                                <input type="checkbox" checked={contrastBoost} onChange={(e) => setContrastBoost(e.target.checked)} className="sr-only peer" />
+                                <input type="checkbox" checked={contrastBoost} onChange={(e) => { setContrastBoost(e.target.checked); if (e.target.checked) setWhitenBg(false); }} className="sr-only peer" />
                                 <div className="w-9 h-5 bg-[var(--color-bg-elevated)] rounded-full peer peer-checked:bg-[var(--color-brand)] transition-colors" />
                                 <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4" />
                             </div>
                         </label>
+                        <label className="flex items-center justify-between cursor-pointer">
+                            <div>
+                                <span className="text-sm text-[var(--color-text-primary)]">Doküman Tarama</span>
+                                <p className="text-xs text-[var(--color-text-muted)]">Agresif işleme — Arka planı beyazlatır ve yazıyı netleştirir</p>
+                            </div>
+                            <div className="relative">
+                                <input type="checkbox" checked={whitenBg} onChange={(e) => { setWhitenBg(e.target.checked); if (e.target.checked) setContrastBoost(false); }} className="sr-only peer" />
+                                <div className="w-9 h-5 bg-[var(--color-bg-elevated)] rounded-full peer peer-checked:bg-[var(--color-brand)] transition-colors" />
+                                <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4" />
+                            </div>
+                        </label>
+                        {whitenBg && (
+                            <div className="pl-1 pr-1 pt-1 pb-2">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-xs text-[var(--color-text-muted)]">Güç</span>
+                                    <span className="text-xs font-mono text-[var(--color-brand-light)]">{scanStrength}/10</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max="10"
+                                    value={scanStrength}
+                                    onChange={(e) => setScanStrength(e.target.value)}
+                                    className="w-full h-1.5 rounded-full appearance-none bg-[var(--color-bg-elevated)] accent-[var(--color-brand)] cursor-pointer"
+                                />
+                                <div className="flex justify-between text-[10px] text-[var(--color-text-muted)] mt-0.5">
+                                    <span>Hafif</span>
+                                    <span>Agresif</span>
+                                </div>
+                            </div>
+                        )}
                         <label className="flex items-center justify-between cursor-pointer">
                             <div>
                                 <span className="text-sm text-[var(--color-text-primary)]">WebP Dönüşümü</span>
