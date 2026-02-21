@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Archive, RotateCcw, Loader2, Sparkles, X, CheckSquare } from "lucide-react";
+import { Archive, RotateCcw, Loader2, Sparkles, X, CheckSquare, Trash } from "lucide-react";
 import { QuestionCard } from "@/components/QuestionCard";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import dynamic from "next/dynamic";
@@ -136,6 +136,17 @@ export default function ArchivePage() {
         fetchQuestions();
     };
 
+    const handleBulkDelete = async () => {
+        if (!confirm(`${selectedIds.size} soruyu kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`)) return;
+        await fetch("/api/questions/bulk", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids: Array.from(selectedIds) }),
+        });
+        setSelectedIds(new Set());
+        fetchQuestions();
+    };
+
     const handleAISolve = useCallback(async (id: string) => {
         const question = questions.find((q) => q.id === id);
         if (!question) return;
@@ -253,6 +264,14 @@ export default function ArchivePage() {
                     <button onClick={handleBulkRestore} className="btn-primary flex items-center gap-2 text-sm py-2">
                         <RotateCcw size={14} />
                         Havuza Geri Taşı
+                    </button>
+                    <button
+                        onClick={handleBulkDelete}
+                        className="btn-secondary flex items-center gap-2 text-sm py-2 whitespace-nowrap text-[var(--color-danger)]"
+                        title="Seçili soruları kalıcı olarak sil"
+                    >
+                        <Trash size={14} />
+                        Sil
                     </button>
                     <button onClick={() => setSelectedIds(new Set())} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">
                         Vazgeç

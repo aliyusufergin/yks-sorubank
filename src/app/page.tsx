@@ -198,6 +198,17 @@ export default function DashboardPage() {
         fetchQuestions();
     };
 
+    const handleBulkDelete = async () => {
+        if (!confirm(`${selectedIds.size} soruyu kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`)) return;
+        await fetch("/api/questions/bulk", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids: Array.from(selectedIds) }),
+        });
+        setSelectedIds(new Set());
+        fetchQuestions();
+    };
+
     const handleClearCache = async () => {
         const ids = Array.from(selectedIds);
         const withAnalysis = questions.filter((q) => ids.includes(q.id) && q.analysis);
@@ -431,6 +442,14 @@ export default function DashboardPage() {
                     >
                         <Trash size={14} />
                         Önbelleği Temizle
+                    </button>
+                    <button
+                        onClick={handleBulkDelete}
+                        className="btn-secondary flex items-center gap-2 text-sm py-2 whitespace-nowrap text-[var(--color-danger)]"
+                        title="Seçili soruları kalıcı olarak sil"
+                    >
+                        <Trash size={14} />
+                        Sil
                     </button>
                     <button onClick={() => setSelectedIds(new Set())} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">
                         Vazgeç

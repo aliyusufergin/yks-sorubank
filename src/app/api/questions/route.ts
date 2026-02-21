@@ -106,6 +106,11 @@ export async function POST(request: NextRequest) {
         : null;
     const answer = (formData.get("answer") as string) || null;
 
+    // Image processing toggles (default to true for backward compatibility)
+    const useGrayscale = formData.get("grayscale") !== "false";
+    const useContrastBoost = formData.get("contrastBoost") !== "false";
+    const useConvertWebp = formData.get("convertWebp") !== "false";
+
     if (!files.length || !lesson) {
         return NextResponse.json({ error: "Dosya ve ders gerekli" }, { status: 400 });
     }
@@ -136,16 +141,27 @@ export async function POST(request: NextRequest) {
             const buffer = Buffer.from(bytes);
 
             const fileId = crypto.randomUUID();
-            const fileName = `${fileId}.webp`;
+            const ext = useConvertWebp ? "webp" : "png";
+            const fileName = `${fileId}.${ext}`;
             const filePath = join(UPLOAD_DIR, fileName);
 
-            // Image pipeline: resize, grayscale, contrast, webp
-            await sharp(buffer)
-                .resize({ width: 2000, withoutEnlargement: true })
-                .grayscale()
-                .linear(1.3, -30) // Contrast boost for scanned paper look
-                .webp({ quality: 85 })
-                .toFile(filePath);
+            // Image pipeline: conditionally apply each step
+            let pipeline = sharp(buffer)
+                .resize({ width: 2000, withoutEnlargement: true });
+
+            if (useGrayscale) {
+                pipeline = pipeline.grayscale();
+            }
+            if (useContrastBoost) {
+                pipeline = pipeline.linear(1.3, -30);
+            }
+            if (useConvertWebp) {
+                pipeline = pipeline.webp({ quality: 85 });
+            } else {
+                pipeline = pipeline.png({ quality: 90 });
+            }
+
+            await pipeline.toFile(filePath);
 
             const question = await prisma.question.create({
                 data: {

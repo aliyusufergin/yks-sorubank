@@ -26,6 +26,9 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
     const [isUploading, setIsUploading] = useState(false);
     const [lessons, setLessons] = useState<LessonData[]>([]);
     const [books, setBooks] = useState<{ id: string; name: string }[]>([]);
+    const [grayscale, setGrayscale] = useState(true);
+    const [contrastBoost, setContrastBoost] = useState(true);
+    const [convertWebp, setConvertWebp] = useState(true);
 
     useEffect(() => {
         if (isOpen) {
@@ -56,6 +59,9 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
         if (pageNumber) formData.append("pageNumber", pageNumber);
         if (questionNumber) formData.append("questionNumber", questionNumber);
         if (answer) formData.append("answer", answer);
+        formData.append("grayscale", String(grayscale));
+        formData.append("contrastBoost", String(contrastBoost));
+        formData.append("convertWebp", String(convertWebp));
 
         try {
             const res = await fetch("/api/questions", { method: "POST", body: formData });
@@ -119,6 +125,44 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
                             ))}
                         </div>
                     )}
+
+                    {/* Image Processing Toggles */}
+                    <div className="space-y-2 rounded-xl border border-[var(--color-border)] p-3">
+                        <p className="text-sm font-medium text-[var(--color-text-secondary)] mb-2">📷 Görsel İşleme</p>
+                        <label className="flex items-center justify-between cursor-pointer">
+                            <div>
+                                <span className="text-sm text-[var(--color-text-primary)]">Gri Tonlama</span>
+                                <p className="text-xs text-[var(--color-text-muted)]">Görseli siyah-beyaz yapar</p>
+                            </div>
+                            <div className="relative">
+                                <input type="checkbox" checked={grayscale} onChange={(e) => setGrayscale(e.target.checked)} className="sr-only peer" />
+                                <div className="w-9 h-5 bg-[var(--color-bg-elevated)] rounded-full peer peer-checked:bg-[var(--color-brand)] transition-colors" />
+                                <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4" />
+                            </div>
+                        </label>
+                        <label className="flex items-center justify-between cursor-pointer">
+                            <div>
+                                <span className="text-sm text-[var(--color-text-primary)]">Kontrast Artırma</span>
+                                <p className="text-xs text-[var(--color-text-muted)]">Taranmış kağıt efekti verir</p>
+                            </div>
+                            <div className="relative">
+                                <input type="checkbox" checked={contrastBoost} onChange={(e) => setContrastBoost(e.target.checked)} className="sr-only peer" />
+                                <div className="w-9 h-5 bg-[var(--color-bg-elevated)] rounded-full peer peer-checked:bg-[var(--color-brand)] transition-colors" />
+                                <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4" />
+                            </div>
+                        </label>
+                        <label className="flex items-center justify-between cursor-pointer">
+                            <div>
+                                <span className="text-sm text-[var(--color-text-primary)]">WebP Dönüşümü</span>
+                                <p className="text-xs text-[var(--color-text-muted)]">Dosya boyutunu küçültür</p>
+                            </div>
+                            <div className="relative">
+                                <input type="checkbox" checked={convertWebp} onChange={(e) => setConvertWebp(e.target.checked)} className="sr-only peer" />
+                                <div className="w-9 h-5 bg-[var(--color-bg-elevated)] rounded-full peer peer-checked:bg-[var(--color-brand)] transition-colors" />
+                                <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4" />
+                            </div>
+                        </label>
+                    </div>
 
                     {/* Lesson Select */}
                     <div>
