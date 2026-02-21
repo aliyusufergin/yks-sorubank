@@ -31,24 +31,28 @@ export async function GET(request: NextRequest) {
 
     try {
         if (random && count > 0) {
-            // Use Prisma's findMany with orderBy and take for random selection
-            // SQLite doesn't support RANDOM() natively in Prisma, so we fetch all IDs
-            // and shuffle on server side for correctness
-            const allIds = await prisma.question.findMany({
-                where,
-                select: { id: true },
-            });
-
-            // Fisher-Yates shuffle
-            const shuffled = allIds.map((q) => q.id);
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            // Build raw SQL for efficient random selection via SQLite's RANDOM()
+            const conditions: string[] = [`"status" = '${status}'`];
+            if (lesson) conditions.push(`"lesson" = '${lesson.replace(/'/g, "''")}'`);
+            if (subject) conditions.push(`"subject" = '${subject.replace(/'/g, "''")}'`);
+            if (source) conditions.push(`"source" = '${source.replace(/'/g, "''")}'`);
+            if (hasAnalysis === "true") {
+                conditions.push(`"id" IN (SELECT "questionId" FROM "QuestionAnalysis")`);
+            } else if (hasAnalysis === "false") {
+                conditions.push(`"id" NOT IN (SELECT "questionId" FROM "QuestionAnalysis")`);
             }
 
+            const whereClause = conditions.join(" AND ");
+            const rows = await prisma.$queryRawUnsafe<{ id: string }[]>(
+                `SELECT "id" FROM "Question" WHERE ${whereClause} ORDER BY RANDOM() LIMIT ${Math.max(1, count)}`
+            );
+            const totalRows = await prisma.$queryRawUnsafe<{ count: number }[]>(
+                `SELECT COUNT(*) as count FROM "Question" WHERE ${whereClause}`
+            );
+
             return NextResponse.json({
-                ids: shuffled.slice(0, Math.min(count, shuffled.length)),
-                total: allIds.length,
+                ids: rows.map((r) => r.id),
+                total: Number(totalRows[0]?.count ?? 0),
             });
         }
 
