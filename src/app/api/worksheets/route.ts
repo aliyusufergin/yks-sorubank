@@ -61,3 +61,17 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(worksheet, { status: 201 });
 }
+
+export async function DELETE(request: NextRequest) {
+    const { ids } = await request.json();
+
+    if (!ids?.length) {
+        return NextResponse.json({ error: "Silinecek çalışma kağıdı seçin" }, { status: 400 });
+    }
+
+    await prisma.worksheet.deleteMany({
+        where: { id: { in: ids } },
+    });
+
+    return NextResponse.json({ success: true, deleted: ids.length });
+}

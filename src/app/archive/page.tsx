@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Archive, RotateCcw, Loader2, Sparkles, X, CheckSquare, Trash } from "lucide-react";
+import { Archive, RotateCcw, Loader2, Sparkles, X, CheckSquare, Trash, Filter } from "lucide-react";
 import { QuestionCard } from "@/components/QuestionCard";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import dynamic from "next/dynamic";
 
 const EditQuestionModal = dynamic(() => import("@/components/EditQuestionModal"), { ssr: false });
+const FilterModal = dynamic(() => import("@/components/FilterModal"), { ssr: false });
 
 interface Question {
     id: string;
@@ -31,6 +32,8 @@ interface AIAnalysis {
 export default function ArchivePage() {
     const [questions, setQuestions] = useState<Question[]>([]);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [filters, setFilters] = useState<{ lesson?: string; subject?: string; source?: string; hasAnalysis?: string }>({});
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -52,24 +55,39 @@ export default function ArchivePage() {
 
     const fetchQuestions = useCallback(async () => {
         setIsLoading(true);
-        const res = await fetch("/api/questions?status=MASTERED");
+        const params = new URLSearchParams();
+        params.set("status", "MASTERED");
+        if (filters.lesson) params.set("lesson", filters.lesson);
+        if (filters.subject) params.set("subject", filters.subject);
+        if (filters.source) params.set("source", filters.source);
+        if (filters.hasAnalysis) params.set("hasAnalysis", filters.hasAnalysis);
+
+        const res = await fetch(`/api/questions?${params}`);
         const data = await res.json();
         setQuestions(data.questions);
         setNextCursor(data.nextCursor);
         setHasMore(data.hasMore);
         setIsLoading(false);
-    }, []);
+    }, [filters]);
 
     const loadMore = useCallback(async () => {
         if (!nextCursor || isLoadingMore) return;
         setIsLoadingMore(true);
-        const res = await fetch(`/api/questions?status=MASTERED&cursor=${nextCursor}`);
+        const params = new URLSearchParams();
+        params.set("status", "MASTERED");
+        params.set("cursor", nextCursor);
+        if (filters.lesson) params.set("lesson", filters.lesson);
+        if (filters.subject) params.set("subject", filters.subject);
+        if (filters.source) params.set("source", filters.source);
+        if (filters.hasAnalysis) params.set("hasAnalysis", filters.hasAnalysis);
+
+        const res = await fetch(`/api/questions?${params}`);
         const data = await res.json();
         setQuestions((prev) => [...prev, ...data.questions]);
         setNextCursor(data.nextCursor);
         setHasMore(data.hasMore);
         setIsLoadingMore(false);
-    }, [nextCursor, isLoadingMore]);
+    }, [nextCursor, isLoadingMore, filters]);
 
     useEffect(() => {
         const el = loadMoreRef.current;
@@ -101,7 +119,13 @@ export default function ArchivePage() {
         }
         setIsSelectingAll(true);
         try {
-            const res = await fetch("/api/questions/ids?status=MASTERED");
+            const params = new URLSearchParams();
+            params.set("status", "MASTERED");
+            if (filters.lesson) params.set("lesson", filters.lesson);
+            if (filters.subject) params.set("subject", filters.subject);
+            if (filters.source) params.set("source", filters.source);
+            if (filters.hasAnalysis) params.set("hasAnalysis", filters.hasAnalysis);
+            const res = await fetch(`/api/questions/ids?${params}`);
             const data = await res.json();
             setSelectedIds(new Set(data.ids));
         } catch (error) {
@@ -109,7 +133,7 @@ export default function ArchivePage() {
         } finally {
             setIsSelectingAll(false);
         }
-    }, [selectedIds.size]);
+    }, [selectedIds.size, filters]);
 
     const handleDelete = useCallback(async (id: string) => {
         if (!confirm("Bu soruyu silmek istediğinize emin misiniz?")) return;
@@ -204,6 +228,15 @@ export default function ArchivePage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
+                <button onClick={() => setIsFilterOpen(true)} className="btn-secondary flex items-center gap-2">
+                    <Filter size={16} />
+                    Filtrele
+                    {Object.values(filters).filter(Boolean).length > 0 && (
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-brand)] text-white text-xs">
+                            {Object.values(filters).filter(Boolean).length}
+                        </span>
+                    )}
+                </button>
                 <button
                     onClick={handleSelectAll}
                     disabled={isSelectingAll}
@@ -339,6 +372,8 @@ export default function ArchivePage() {
                     question={editingQuestion}
                 />
             )}
+
+            <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} onApply={setFilters} currentFilters={filters} />
         </div>
     );
 }

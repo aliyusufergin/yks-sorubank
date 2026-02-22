@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { FileText, Search, Trash2, Calendar, BookOpen, Loader2, Edit3 } from "lucide-react";
+import { FileText, Search, Trash2, Calendar, BookOpen, Loader2, Edit3, CheckSquare, Trash } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 interface WorksheetData {
@@ -17,6 +17,7 @@ export default function WorksheetsPage() {
     const [worksheets, setWorksheets] = useState<WorksheetData[]>([]);
     const [search, setSearch] = useState("");
     const [isLoading, setIsLoading] = useState(true);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     const fetchWorksheets = async () => {
         setIsLoading(true);
@@ -39,6 +40,32 @@ export default function WorksheetsPage() {
         fetchWorksheets();
     };
 
+    const handleSelect = (id: string) => {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+        });
+    };
+
+    const handleSelectAll = () => {
+        if (selectedIds.size > 0) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(worksheets.map((ws) => ws.id)));
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (!confirm(`${selectedIds.size} çalışma kağıdını silmek istediğinize emin misiniz?`)) return;
+        await fetch("/api/worksheets", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids: Array.from(selectedIds) }),
+        });
+        setSelectedIds(new Set());
+        fetchWorksheets();
+    };
     const handleRename = async (id: string, currentTitle: string) => {
         const newTitle = prompt("Yeni başlık:", currentTitle);
         if (!newTitle || newTitle === currentTitle) return;
@@ -67,17 +94,26 @@ export default function WorksheetsPage() {
                 </p>
             </div>
 
-            {/* Search */}
-            <div className="relative">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
-                <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Çalışma kağıtlarında ara..."
-                    className="input-field"
-                    style={{ paddingLeft: "2.5rem" }}
-                />
+            {/* Toolbar */}
+            <div className="flex flex-wrap items-center gap-3">
+                <div className="relative flex-1">
+                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Çalışma kağıtlarında ara..."
+                        className="input-field"
+                        style={{ paddingLeft: "2.5rem" }}
+                    />
+                </div>
+                <button
+                    onClick={handleSelectAll}
+                    className="btn-secondary flex items-center gap-2"
+                >
+                    <CheckSquare size={16} />
+                    {selectedIds.size > 0 ? "Seçimi Kaldır" : "Tümünü Seç"}
+                </button>
             </div>
 
             {/* Worksheet List */}
@@ -94,7 +130,28 @@ export default function WorksheetsPage() {
             ) : (
                 <div className="space-y-3">
                     {worksheets.map((ws) => (
-                        <div key={ws.id} className="glass-card flex items-center gap-4 p-4">
+                        <div
+                            key={ws.id}
+                            className={`glass-card flex items-center gap-4 p-4 cursor-pointer transition-all ${selectedIds.has(ws.id)
+                                    ? "ring-2 ring-[var(--color-brand)] bg-[var(--color-brand)]/5"
+                                    : ""
+                                }`}
+                            onClick={() => handleSelect(ws.id)}
+                        >
+                            <div className="flex-shrink-0">
+                                <div
+                                    className={`h-5 w-5 rounded border-2 flex items-center justify-center transition-all ${selectedIds.has(ws.id)
+                                            ? "border-[var(--color-brand)] bg-[var(--color-brand)] text-white"
+                                            : "border-[var(--color-border)]"
+                                        }`}
+                                >
+                                    {selectedIds.has(ws.id) && (
+                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                            <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    )}
+                                </div>
+                            </div>
                             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-accent)]/10 text-[var(--color-accent)] flex-shrink-0">
                                 <FileText size={22} />
                             </div>
@@ -122,14 +179,14 @@ export default function WorksheetsPage() {
                             </div>
                             <div className="flex items-center gap-1 flex-shrink-0">
                                 <button
-                                    onClick={() => handleRename(ws.id, ws.title)}
+                                    onClick={(e) => { e.stopPropagation(); handleRename(ws.id, ws.title); }}
                                     className="p-2 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-card-hover)] transition-all"
                                     title="Yeniden adlandır"
                                 >
                                     <Edit3 size={14} />
                                 </button>
                                 <button
-                                    onClick={() => handleDelete(ws.id)}
+                                    onClick={(e) => { e.stopPropagation(); handleDelete(ws.id); }}
                                     className="p-2 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 transition-all"
                                     title="Sil"
                                 >
@@ -138,6 +195,26 @@ export default function WorksheetsPage() {
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Bulk Action Bar */}
+            {selectedIds.size > 0 && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 rounded-2xl bg-[var(--color-bg)] border border-[var(--color-border)] px-6 py-3 shadow-2xl backdrop-blur-xl">
+                    <span className="text-sm font-medium text-[var(--color-text-secondary)]">
+                        {selectedIds.size} kağıt seçildi
+                    </span>
+                    <div className="h-4 w-px bg-[var(--color-border)]" />
+                    <button
+                        onClick={handleBulkDelete}
+                        className="btn-secondary flex items-center gap-2 text-sm py-2 whitespace-nowrap text-[var(--color-danger)]"
+                    >
+                        <Trash size={14} />
+                        Seçilenleri Sil
+                    </button>
+                    <button onClick={() => setSelectedIds(new Set())} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">
+                        Vazgeç
+                    </button>
                 </div>
             )}
         </div>
