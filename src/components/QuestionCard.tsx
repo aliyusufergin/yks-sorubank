@@ -101,15 +101,15 @@ function QuestionCardInner({
             </div>
 
             {/* Info */}
-            <div className="p-3 space-y-2">
-                <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center rounded-md bg-[var(--color-brand)]/10 px-2 py-0.5 text-xs font-medium text-[var(--color-brand-light)]">
+            <div className="p-2 sm:p-3 space-y-1.5">
+                <div className="flex flex-col gap-1.5">
+                    <span className="inline-flex items-center self-start rounded-md bg-[var(--color-brand)]/10 px-2 py-0.5 text-xs font-medium text-[var(--color-brand-light)]">
                         {lesson}
                     </span>
                     <button
                         onClick={(e) => { e.stopPropagation(); onAISolve(id); }}
                         className={cn(
-                            "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium transition-colors",
+                            "inline-flex items-center self-start gap-1 rounded-md px-2 py-0.5 text-xs font-medium transition-colors",
                             hasAnalysis
                                 ? "bg-[var(--color-success)]/10 text-[var(--color-success)] hover:bg-[var(--color-success)]/20"
                                 : "bg-[var(--color-accent)]/10 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/20"

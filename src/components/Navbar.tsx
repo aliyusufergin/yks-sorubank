@@ -81,7 +81,7 @@ export default function Navbar() {
                             key={href}
                             href={href}
                             className={cn(
-                                "flex flex-1 flex-col items-center gap-1 py-2.5 px-2 text-xs font-medium transition-colors min-w-[4.5rem]",
+                                "flex flex-1 flex-col items-center gap-1 py-2.5 px-1 text-[10px] font-medium transition-colors text-center leading-tight",
                                 isActive
                                     ? "text-[var(--color-brand-light)]"
                                     : "text-[var(--color-text-muted)]"

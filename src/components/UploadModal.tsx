@@ -90,8 +90,8 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="glass-card w-full max-w-lg p-6 space-y-5 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 backdrop-blur-sm p-4 pt-20 pb-20 md:pb-4 overflow-y-auto">
+            <div className="glass-card w-full max-w-lg p-6 space-y-5 flex-shrink-0">
                 <div className="flex items-center justify-between">
                     <h2 className="text-lg font-bold text-[var(--color-text-primary)]">Soru Ekle</h2>
                     <button onClick={onClose} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">

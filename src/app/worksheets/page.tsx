@@ -95,14 +95,14 @@ export default function WorksheetsPage() {
             </div>
 
             {/* Toolbar */}
-            <div className="flex flex-wrap items-center gap-3">
-                <div className="relative flex-1">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <div className="relative flex-1 min-w-0">
                     <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
                     <input
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Çalışma kağıtlarında ara..."
+                        placeholder="Ara..."
                         className="input-field"
                         style={{ paddingLeft: "2.5rem" }}
                     />
@@ -112,7 +112,7 @@ export default function WorksheetsPage() {
                     className="btn-secondary flex items-center gap-2"
                 >
                     <CheckSquare size={16} />
-                    {selectedIds.size > 0 ? "Seçimi Kaldır" : "Tümünü Seç"}
+                    <span className="hidden sm:inline">{selectedIds.size > 0 ? "Seçimi Kaldır" : "Tümünü Seç"}</span>
                 </button>
             </div>
 
@@ -133,16 +133,16 @@ export default function WorksheetsPage() {
                         <div
                             key={ws.id}
                             className={`glass-card flex items-center gap-4 p-4 cursor-pointer transition-all ${selectedIds.has(ws.id)
-                                    ? "ring-2 ring-[var(--color-brand)] bg-[var(--color-brand)]/5"
-                                    : ""
+                                ? "ring-2 ring-[var(--color-brand)] bg-[var(--color-brand)]/5"
+                                : ""
                                 }`}
                             onClick={() => handleSelect(ws.id)}
                         >
                             <div className="flex-shrink-0">
                                 <div
                                     className={`h-5 w-5 rounded border-2 flex items-center justify-center transition-all ${selectedIds.has(ws.id)
-                                            ? "border-[var(--color-brand)] bg-[var(--color-brand)] text-white"
-                                            : "border-[var(--color-border)]"
+                                        ? "border-[var(--color-brand)] bg-[var(--color-brand)] text-white"
+                                        : "border-[var(--color-border)]"
                                         }`}
                                 >
                                     {selectedIds.has(ws.id) && (
@@ -200,19 +200,19 @@ export default function WorksheetsPage() {
 
             {/* Bulk Action Bar */}
             {selectedIds.size > 0 && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 rounded-2xl bg-[var(--color-bg)] border border-[var(--color-border)] px-6 py-3 shadow-2xl backdrop-blur-xl">
-                    <span className="text-sm font-medium text-[var(--color-text-secondary)]">
-                        {selectedIds.size} kağıt seçildi
+                <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 sm:gap-3 rounded-2xl bg-[var(--color-bg)] border border-[var(--color-border)] px-3 sm:px-6 py-2.5 sm:py-3 shadow-2xl backdrop-blur-xl max-w-[calc(100vw-2rem)] overflow-x-auto">
+                    <span className="text-xs sm:text-sm font-medium text-[var(--color-text-secondary)] whitespace-nowrap">
+                        {selectedIds.size} seçildi
                     </span>
-                    <div className="h-4 w-px bg-[var(--color-border)]" />
+                    <div className="h-4 w-px bg-[var(--color-border)] flex-shrink-0" />
                     <button
                         onClick={handleBulkDelete}
-                        className="btn-secondary flex items-center gap-2 text-sm py-2 whitespace-nowrap text-[var(--color-danger)]"
+                        className="btn-secondary flex items-center gap-1.5 text-xs sm:text-sm py-1.5 sm:py-2 whitespace-nowrap text-[var(--color-danger)]"
                     >
                         <Trash size={14} />
-                        Seçilenleri Sil
+                        <span className="hidden sm:inline">Seçilenleri Sil</span>
                     </button>
-                    <button onClick={() => setSelectedIds(new Set())} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">
+                    <button onClick={() => setSelectedIds(new Set())} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] whitespace-nowrap flex-shrink-0">
                         Vazgeç
                     </button>
                 </div>

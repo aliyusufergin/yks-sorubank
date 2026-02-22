@@ -313,14 +313,14 @@ export default function DashboardPage() {
             </div>
 
             {/* Toolbar */}
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <button onClick={() => setIsUploadOpen(true)} className="btn-primary flex items-center gap-2">
                     <Plus size={16} />
-                    Soru Ekle
+                    <span className="hidden sm:inline">Soru Ekle</span>
                 </button>
                 <button onClick={() => setIsFilterOpen(true)} className="btn-secondary flex items-center gap-2">
                     <Filter size={16} />
-                    Filtrele
+                    <span className="hidden sm:inline">Filtrele</span>
                     {activeFilterCount > 0 && (
                         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-brand)] text-white text-xs">
                             {activeFilterCount}
@@ -333,7 +333,7 @@ export default function DashboardPage() {
                     className="btn-secondary flex items-center gap-2"
                 >
                     {isSelectingAll ? <Loader2 size={16} className="animate-spin" /> : <CheckSquare size={16} />}
-                    {selectedIds.size > 0 ? "Seçimi Kaldır" : "Tümünü Seç"}
+                    <span className="hidden sm:inline">{selectedIds.size > 0 ? "Seçimi Kaldır" : "Tümünü Seç"}</span>
                 </button>
                 <div className="relative">
                     <button
@@ -341,11 +341,11 @@ export default function DashboardPage() {
                         className="btn-secondary flex items-center gap-2"
                     >
                         <Dices size={16} />
-                        Rastgele Seç
+                        <span className="hidden sm:inline">Rastgele Seç</span>
                     </button>
                     {showRandomPopover && (
-                        <div className="absolute top-full left-0 mt-2 z-30 glass-card p-3 shadow-xl space-y-2 min-w-[200px]">
-                            <label className="block text-xs font-medium text-[var(--color-text-secondary)]">Kaç soru seçilsin?</label>
+                        <div className="absolute top-full left-0 mt-2 z-30 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-3 shadow-xl space-y-2 min-w-[200px]">
+                            <label className="block text-xs font-medium text-[var(--color-text-primary)]">Kaç soru seçilsin?</label>
                             <input
                                 type="number"
                                 min="1"
@@ -415,43 +415,43 @@ export default function DashboardPage() {
 
             {/* Bulk Action Bar */}
             {selectedIds.size > 0 && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 rounded-2xl bg-[var(--color-bg)] border border-[var(--color-border)] px-6 py-3 shadow-2xl backdrop-blur-xl">
-                    <span className="text-sm font-medium text-[var(--color-text-secondary)]">
-                        {selectedIds.size} soru seçildi
+                <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 sm:gap-3 rounded-2xl bg-[var(--color-bg)] border border-[var(--color-border)] px-3 sm:px-6 py-2.5 sm:py-3 shadow-2xl backdrop-blur-xl max-w-[calc(100vw-2rem)] overflow-x-auto">
+                    <span className="text-xs sm:text-sm font-medium text-[var(--color-text-secondary)] whitespace-nowrap">
+                        {selectedIds.size} seçildi
                     </span>
-                    <div className="h-4 w-px bg-[var(--color-border)]" />
-                    <button onClick={handleBulkArchive} className="btn-secondary flex items-center gap-2 text-sm py-2 whitespace-nowrap">
+                    <div className="h-4 w-px bg-[var(--color-border)] flex-shrink-0" />
+                    <button onClick={handleBulkArchive} className="btn-secondary flex items-center gap-1.5 text-xs sm:text-sm py-1.5 sm:py-2 whitespace-nowrap">
                         <Archive size={14} />
-                        Arşive Taşı
+                        <span className="hidden sm:inline">Arşive Taşı</span>
                     </button>
-                    <button onClick={openTitleModal} className="btn-secondary flex items-center gap-2 text-sm py-2 whitespace-nowrap">
+                    <button onClick={openTitleModal} className="btn-secondary flex items-center gap-1.5 text-xs sm:text-sm py-1.5 sm:py-2 whitespace-nowrap">
                         <FileText size={14} />
-                        Çalışma Kağıdı Oluştur
+                        <span className="hidden sm:inline">Çalışma Kağıdı</span>
                     </button>
                     <button
                         onClick={() => router.push(`/ai?questionIds=${Array.from(selectedIds).join(",")}`)}
-                        className="btn-secondary flex items-center gap-2 text-sm py-2 whitespace-nowrap"
+                        className="btn-secondary flex items-center gap-1.5 text-xs sm:text-sm py-1.5 sm:py-2 whitespace-nowrap"
                     >
                         <Sparkles size={14} />
-                        AI Tavsiye
+                        <span className="hidden sm:inline">AI Tavsiye</span>
                     </button>
                     <button
                         onClick={handleClearCache}
-                        className="btn-secondary flex items-center gap-2 text-sm py-2 whitespace-nowrap text-[var(--color-accent)]"
+                        className="btn-secondary flex items-center gap-1.5 text-xs sm:text-sm py-1.5 sm:py-2 whitespace-nowrap text-[var(--color-accent)]"
                         title="Seçili soruların AI önbelleğini temizle"
                     >
                         <Trash size={14} />
-                        Önbelleği Temizle
+                        <span className="hidden sm:inline">Önbellek</span>
                     </button>
                     <button
                         onClick={handleBulkDelete}
-                        className="btn-secondary flex items-center gap-2 text-sm py-2 whitespace-nowrap text-[var(--color-danger)]"
+                        className="btn-secondary flex items-center gap-1.5 text-xs sm:text-sm py-1.5 sm:py-2 whitespace-nowrap text-[var(--color-danger)]"
                         title="Seçili soruları kalıcı olarak sil"
                     >
                         <Trash size={14} />
-                        Sil
+                        <span className="hidden sm:inline">Sil</span>
                     </button>
-                    <button onClick={() => setSelectedIds(new Set())} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">
+                    <button onClick={() => setSelectedIds(new Set())} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] whitespace-nowrap flex-shrink-0">
                         Vazgeç
                     </button>
                 </div>

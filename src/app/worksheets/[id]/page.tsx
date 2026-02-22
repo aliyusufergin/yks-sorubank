@@ -89,7 +89,7 @@ export default function WorksheetDetailPage({ params }: { params: Promise<{ id: 
                 </div>
 
                 {/* Questions Grid - 2 columns */}
-                <div className="p-6 grid grid-cols-2 gap-4">
+                <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {worksheet.questions.map((wq, index) => (
                         <div key={wq.question.id} className="border border-gray-200 rounded-lg overflow-hidden">
                             <div className="bg-gray-50 px-3 py-1.5 border-b border-gray-200">
