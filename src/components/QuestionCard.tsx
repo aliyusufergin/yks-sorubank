@@ -129,7 +129,7 @@ function QuestionCardInner({
                 {(pageNumber || questionNumber) && (
                     <div className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
                         <FileText size={10} />
-                        {pageNumber && <span>S.{pageNumber}</span>}
+                        {pageNumber && <span>{pageNumber}</span>}
                         {questionNumber && <span>#{questionNumber}</span>}
                     </div>
                 )}

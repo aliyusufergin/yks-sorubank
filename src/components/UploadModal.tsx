@@ -249,7 +249,7 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
-                                Sayfa No
+                                Sayfa / Deneme No
                             </label>
                             <input
                                 type="number"

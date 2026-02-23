@@ -140,7 +140,7 @@ export default function WorksheetDetailPage({ params }: { params: Promise<{ id: 
                                             {wq.question.source || ""}
                                             {(wq.question.pageNumber || wq.question.questionNumber) && (
                                                 <span className="ml-1 text-xs">
-                                                    {wq.question.pageNumber && `S.${wq.question.pageNumber}`}
+                                                    {wq.question.pageNumber && `${wq.question.pageNumber}`}
                                                     {wq.question.pageNumber && wq.question.questionNumber && " / "}
                                                     {wq.question.questionNumber && `#${wq.question.questionNumber}`}
                                                 </span>
