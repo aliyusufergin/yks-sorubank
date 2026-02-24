@@ -40,5 +40,7 @@ async function autoSeed() {
     }
 }
 
-// Trigger auto-seed on module load
-autoSeed();
+// Trigger auto-seed on module load — only at runtime, not during build
+if (process.env.DATABASE_URL) {
+    autoSeed();
+}
