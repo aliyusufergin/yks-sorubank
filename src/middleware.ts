@@ -20,8 +20,10 @@ export function middleware(request: NextRequest) {
 export const config = {
     matcher: [
         /*
-         * Match all request paths except Next.js internals and static files
+         * Match all request paths except:
+         * - Next.js internals and static files
+         * - /api/questions (upload route — middleware body buffering has 10MB limit)
          */
-        "/((?!_next/static|_next/image|favicon.ico|icon.svg).*)",
+        "/((?!_next/static|_next/image|favicon.ico|icon.svg|api/questions).*)",
     ],
 };
