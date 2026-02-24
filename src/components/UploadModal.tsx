@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { X, Upload, Plus, Loader2, AlertTriangle } from "lucide-react";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB per file
+const MAX_TOTAL_SIZE = 250 * 1024 * 1024; // 250MB total
 
 interface UploadModalProps {
     isOpen: boolean;
@@ -34,6 +35,7 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
     const [scanStrength, setScanStrength] = useState("8");
     const [convertWebp, setConvertWebp] = useState(true);
     const [fileSizeWarning, setFileSizeWarning] = useState<string | null>(null);
+    const [uploadError, setUploadError] = useState<string | null>(null);
 
     useEffect(() => {
         if (isOpen) {
@@ -50,25 +52,40 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
             const oversized = allFiles.filter((f) => f.size > MAX_FILE_SIZE);
             const valid = allFiles.filter((f) => f.size <= MAX_FILE_SIZE);
 
+            const warnings: string[] = [];
+
             if (oversized.length > 0) {
                 const names = oversized.map((f) => f.name).join(", ");
-                setFileSizeWarning(
-                    `${oversized.length} dosya 10 MB sınırını aştığı için eklenmedi: ${names}`
-                );
-                setTimeout(() => setFileSizeWarning(null), 6000);
+                warnings.push(`${oversized.length} dosya 10 MB sınırını aştığı için eklenmedi: ${names}`);
+            }
+
+            const totalSize = valid.reduce((sum, f) => sum + f.size, 0);
+            if (totalSize > MAX_TOTAL_SIZE) {
+                const totalMB = (totalSize / (1024 * 1024)).toFixed(0);
+                warnings.push(`Toplam dosya boyutu ${totalMB} MB — yükleme limiti 250 MB. Lütfen daha az dosya seçin.`);
+            }
+
+            if (warnings.length > 0) {
+                setFileSizeWarning(warnings.join(" | "));
+                setTimeout(() => setFileSizeWarning(null), 8000);
             } else {
                 setFileSizeWarning(null);
             }
 
+            setUploadError(null);
             setFiles(valid);
         }
     };
 
+    const totalSize = files.reduce((sum, f) => sum + f.size, 0);
+    const isTotalOversized = totalSize > MAX_TOTAL_SIZE;
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!files.length || !lesson) return;
+        if (!files.length || !lesson || isTotalOversized) return;
 
         setIsUploading(true);
+        setUploadError(null);
 
         const formData = new FormData();
         files.forEach((f) => formData.append("files", f));
@@ -94,11 +111,16 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
                 setPageNumber("");
                 setQuestionNumber("");
                 setAnswer("");
+                setUploadError(null);
                 onSuccess();
                 onClose();
+            } else {
+                const data = await res.json().catch(() => null);
+                setUploadError(data?.error || `Yükleme başarısız (${res.status})`);
             }
         } catch (err) {
             console.error("Yükleme hatası:", err);
+            setUploadError("Bağlantı hatası — lütfen tekrar deneyin.");
         } finally {
             setIsUploading(false);
         }
@@ -312,9 +334,25 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
                         />
                     </div>
 
+                    {/* Upload Error */}
+                    {uploadError && (
+                        <div className="flex items-start gap-2 rounded-lg border border-[var(--color-danger)] bg-[var(--color-danger)]/10 p-3 text-sm text-[var(--color-text-primary)]">
+                            <AlertTriangle size={16} className="flex-shrink-0 mt-0.5 text-[var(--color-danger)]" />
+                            <span>{uploadError}</span>
+                        </div>
+                    )}
+
+                    {/* Total Size Warning */}
+                    {isTotalOversized && (
+                        <div className="flex items-start gap-2 rounded-lg border border-[var(--color-danger)] bg-[var(--color-danger)]/10 p-3 text-sm text-[var(--color-text-primary)]">
+                            <AlertTriangle size={16} className="flex-shrink-0 mt-0.5 text-[var(--color-danger)]" />
+                            <span>Toplam dosya boyutu <strong>{(totalSize / (1024 * 1024)).toFixed(0)} MB</strong> — tek seferde en fazla <strong>250 MB</strong> yüklenebilir. Lütfen daha az dosya seçin veya dosyaları birden fazla seferde yükleyin.</span>
+                        </div>
+                    )}
+
                     <button
                         type="submit"
-                        disabled={isUploading || !files.length || !lesson}
+                        disabled={isUploading || !files.length || !lesson || isTotalOversized}
                         className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {isUploading ? (
