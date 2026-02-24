@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
         }
         if (file.size > maxFileSize) {
             return NextResponse.json(
-                { error: `Dosya boyutu çok büyük (max 5MB): ${file.name}` },
+                { error: `Dosya boyutu çok büyük (max 10MB): ${file.name}` },
                 { status: 400 }
             );
         }

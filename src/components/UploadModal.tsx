@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Upload, Plus, Loader2 } from "lucide-react";
+import { X, Upload, Plus, Loader2, AlertTriangle } from "lucide-react";
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB per file
 
 interface UploadModalProps {
     isOpen: boolean;
@@ -31,6 +33,7 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
     const [whitenBg, setWhitenBg] = useState(false);
     const [scanStrength, setScanStrength] = useState("8");
     const [convertWebp, setConvertWebp] = useState(true);
+    const [fileSizeWarning, setFileSizeWarning] = useState<string | null>(null);
 
     useEffect(() => {
         if (isOpen) {
@@ -43,7 +46,21 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
-            setFiles(Array.from(e.target.files));
+            const allFiles = Array.from(e.target.files);
+            const oversized = allFiles.filter((f) => f.size > MAX_FILE_SIZE);
+            const valid = allFiles.filter((f) => f.size <= MAX_FILE_SIZE);
+
+            if (oversized.length > 0) {
+                const names = oversized.map((f) => f.name).join(", ");
+                setFileSizeWarning(
+                    `${oversized.length} dosya 10 MB sınırını aştığı için eklenmedi: ${names}`
+                );
+                setTimeout(() => setFileSizeWarning(null), 6000);
+            } else {
+                setFileSizeWarning(null);
+            }
+
+            setFiles(valid);
         }
     };
 
@@ -109,8 +126,16 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
                         <input type="file" accept="image/*" multiple onChange={handleFileChange} className="hidden" />
                     </label>
                     <p className="text-xs text-[var(--color-text-muted)]">
-                        💡 Çalışma kağıtlarında tutarlı görünüm için <strong>4:3</strong> veya <strong>3:4</strong> oranlı görseller önerilir.
+                        💡 Çalışma kağıtlarında tutarlı görünüm için <strong>4:3</strong> veya <strong>3:4</strong> oranlı görseller önerilir. Dosya başına maks. <strong>10 MB</strong>.
                     </p>
+
+                    {/* File Size Warning */}
+                    {fileSizeWarning && (
+                        <div className="flex items-start gap-2 rounded-lg border border-[var(--color-warning,#f59e0b)] bg-[var(--color-warning,#f59e0b)]/10 p-3 text-sm text-[var(--color-text-primary)]">
+                            <AlertTriangle size={16} className="flex-shrink-0 mt-0.5 text-[var(--color-warning,#f59e0b)]" />
+                            <span>{fileSizeWarning}</span>
+                        </div>
+                    )}
 
                     {/* Preview */}
                     {files.length > 0 && (

@@ -14,17 +14,6 @@ export function middleware(request: NextRequest) {
         "camera=(), microphone=(), geolocation=()"
     );
 
-    // File upload size limit (10MB) — reject oversized requests early
-    const contentLength = request.headers.get("content-length");
-    if (contentLength && parseInt(contentLength) > 10 * 1024 * 1024) {
-        if (request.nextUrl.pathname.startsWith("/api/questions")) {
-            return NextResponse.json(
-                { error: "Dosya boyutu çok büyük (max 10MB)" },
-                { status: 413 }
-            );
-        }
-    }
-
     return response;
 }
 
