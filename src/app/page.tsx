@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Plus, Filter, Archive, FileText, BookOpen, Loader2, X, Sparkles, Calendar, Trash, CheckSquare, Dices } from "lucide-react";
+import { Plus, Filter, Archive, FileText, BookOpen, Loader2, X, Sparkles, Calendar, Trash, CheckSquare, Dices, Eraser } from "lucide-react";
 import { QuestionCard } from "@/components/QuestionCard";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import dynamic from "next/dynamic";
@@ -440,7 +440,7 @@ export default function DashboardPage() {
                         className="btn-secondary flex items-center gap-1.5 text-xs sm:text-sm py-1.5 sm:py-2 whitespace-nowrap text-[var(--color-accent)]"
                         title="Seçili soruların AI önbelleğini temizle"
                     >
-                        <Trash size={14} />
+                        <Eraser size={14} />
                         <span className="hidden sm:inline">Önbellek</span>
                     </button>
                     <button

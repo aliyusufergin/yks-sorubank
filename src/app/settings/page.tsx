@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Settings, Sun, Moon, Plus, Trash2, Key, BookOpen, Tag, Library, Sparkles, Save, ChevronDown, ChevronUp, Cpu, Loader2, RefreshCw } from "lucide-react";
+import { Settings, Sun, Moon, Plus, Trash2, Key, BookOpen, Tag, Library, Sparkles, Save, ChevronDown, ChevronUp, Cpu, Loader2, RefreshCw, SlidersHorizontal } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { encryptApiKey, decryptApiKey } from "@/lib/crypto";
 
@@ -58,6 +58,9 @@ export default function SettingsPage() {
     const [modelsLoading, setModelsLoading] = useState(false);
     const [modelsError, setModelsError] = useState("");
 
+    // Worksheet spacing
+    const [worksheetSpacing, setWorksheetSpacing] = useState<Record<string, number>>({});
+
     useEffect(() => {
         const savedModel = localStorage.getItem("yks-sorubank-model");
         if (savedModel) setSelectedModel(savedModel);
@@ -66,6 +69,11 @@ export default function SettingsPage() {
         const savedPlanPrompt = localStorage.getItem("yks-sorubank-prompt-plan");
         if (savedRecPrompt) setRecommendationsPrompt(savedRecPrompt);
         if (savedPlanPrompt) setStudyPlanPrompt(savedPlanPrompt);
+
+        const savedSpacing = localStorage.getItem("yks-sorubank-worksheet-spacing");
+        if (savedSpacing) {
+            try { setWorksheetSpacing(JSON.parse(savedSpacing)); } catch { /* ignore */ }
+        }
 
         // Decrypt API key
         const encryptedKey = localStorage.getItem("yks-sorubank-api-key");
@@ -118,6 +126,12 @@ export default function SettingsPage() {
     const handleModelChange = (model: string) => {
         setSelectedModel(model);
         localStorage.setItem("yks-sorubank-model", model);
+    };
+
+    const updateWorksheetSpacing = (key: string, value: number) => {
+        const updated = { ...worksheetSpacing, [key]: value };
+        setWorksheetSpacing(updated);
+        localStorage.setItem("yks-sorubank-worksheet-spacing", JSON.stringify(updated));
     };
 
     const fetchModels = async () => {
@@ -261,7 +275,63 @@ export default function SettingsPage() {
                 </div>
             </section>
 
+            {/* Worksheet Spacing */}
+            <section className="glass-card p-5 space-y-4">
+                <h2 className="text-sm font-semibold text-[var(--color-text-primary)] flex items-center gap-2">
+                    <SlidersHorizontal size={16} />
+                    Çalışma Kağıdı Boşluk Ayarları
+                </h2>
+                <p className="text-xs text-[var(--color-text-muted)]">
+                    Yazdırılan çalışma kağıtlarında her sorunun altındaki çalışma/not alanı boyutunu ders bazlı ayarlayın.
+                </p>
 
+                {/* Default spacing */}
+                <div className="space-y-2 rounded-xl border border-[var(--color-border)] p-3">
+                    <label className="text-xs font-semibold text-[var(--color-text-secondary)]">Varsayılan Boşluk</label>
+                    <div className="flex items-center gap-3">
+                        <input
+                            type="range"
+                            min={0}
+                            max={150}
+                            step={5}
+                            value={worksheetSpacing._default ?? 40}
+                            onChange={(e) => updateWorksheetSpacing("_default", Number(e.target.value))}
+                            className="flex-1 accent-[var(--color-brand)]"
+                        />
+                        <span className="text-xs font-mono text-[var(--color-text-muted)] w-14 text-right">
+                            {worksheetSpacing._default ?? 40} mm
+                        </span>
+                    </div>
+                </div>
+
+                {/* Per-lesson spacing */}
+                {lessons.length > 0 && (
+                    <div className="space-y-2">
+                        <label className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Ders Bazlı</label>
+                        <div className="space-y-2">
+                            {lessons.map((lesson) => (
+                                <div key={lesson.id} className="rounded-xl border border-[var(--color-border)] p-3 space-y-2">
+                                    <label className="text-xs font-medium text-[var(--color-text-primary)]">{lesson.name}</label>
+                                    <div className="flex items-center gap-3">
+                                        <input
+                                            type="range"
+                                            min={0}
+                                            max={150}
+                                            step={5}
+                                            value={worksheetSpacing[lesson.name] ?? worksheetSpacing._default ?? 40}
+                                            onChange={(e) => updateWorksheetSpacing(lesson.name, Number(e.target.value))}
+                                            className="flex-1 accent-[var(--color-brand)]"
+                                        />
+                                        <span className="text-xs font-mono text-[var(--color-text-muted)] w-14 text-right">
+                                            {worksheetSpacing[lesson.name] ?? worksheetSpacing._default ?? 40} mm
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </section>
 
             {/* API Key */}
             <section className="glass-card p-5 space-y-3">

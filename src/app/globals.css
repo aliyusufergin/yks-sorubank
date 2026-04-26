@@ -210,6 +210,22 @@ select.input-field option {
   padding: 0.5rem;
 }
 
+/* Worksheet columns layout */
+.worksheet-columns {
+  columns: 2;
+  column-gap: 1rem;
+}
+
+.worksheet-columns > * {
+  break-inside: avoid;
+}
+
+@media (max-width: 640px) {
+  .worksheet-columns {
+    columns: 1;
+  }
+}
+
 /* Print styles */
 @media print {
   @page {
@@ -242,6 +258,16 @@ select.input-field option {
   main {
     padding: 0 !important;
     margin: 0 !important;
+  }
+
+  .worksheet-columns > * {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .worksheet-answer-space {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }
 
