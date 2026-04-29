@@ -8,6 +8,23 @@ export const prisma = globalForPrisma.prisma || new PrismaClient();
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
 /**
+ * Auto-migrate: Eksik tabloları oluşturur.
+ * Mevcut veritabanlarında yeni tablolar eklendğinde çalışır.
+ */
+async function autoMigrate() {
+    try {
+        await prisma.$executeRawUnsafe(`
+            CREATE TABLE IF NOT EXISTS "AppSetting" (
+                "key" TEXT PRIMARY KEY NOT NULL,
+                "value" TEXT NOT NULL
+            )
+        `);
+    } catch (error) {
+        console.error("Auto-migrate hatası:", error);
+    }
+}
+
+/**
  * Auto-seed: İlk kurulumda Lesson tablosu boşsa varsayılan dersleri ekler.
  * Uygulama başlangıcında bir kez çalışır.
  */
@@ -40,7 +57,7 @@ async function autoSeed() {
     }
 }
 
-// Trigger auto-seed on module load — only at runtime, not during build
+// Trigger auto-migrate + auto-seed on module load — only at runtime, not during build
 if (process.env.DATABASE_URL) {
-    autoSeed();
+    autoMigrate().then(() => autoSeed());
 }
