@@ -98,6 +98,7 @@ export async function POST(request: NextRequest) {
     const lesson = formData.get("lesson") as string;
     const subject = (formData.get("subject") as string) || null;
     const source = (formData.get("source") as string) || null;
+    const useParseFromFilename = formData.get("parseFromFilename") === "true";
     const pageNumber = formData.get("pageNumber")
         ? parseInt(formData.get("pageNumber") as string)
         : null;
@@ -175,6 +176,23 @@ export async function POST(request: NextRequest) {
 
             await pipeline.toFile(filePath);
 
+            // Parse page/question number and answer from original filename if enabled
+            let finalPageNumber = pageNumber;
+            let finalQuestionNumber = questionNumber;
+            let finalAnswer = answer;
+            if (useParseFromFilename) {
+                const baseName = file.name.replace(/\.[^.]+$/, "");
+                const match = baseName.match(/^(\d+)-(\d+)(?:-([A-Za-z]+))?$/);
+                if (match) {
+                    finalPageNumber = parseInt(match[1]);
+                    finalQuestionNumber = parseInt(match[2]);
+                    if (match[3]) finalAnswer = match[3].toUpperCase();
+                } else {
+                    finalPageNumber = null;
+                    finalQuestionNumber = null;
+                }
+            }
+
             const question = await prisma.question.create({
                 data: {
                     fileId,
@@ -182,9 +200,9 @@ export async function POST(request: NextRequest) {
                     lesson,
                     subject,
                     source,
-                    pageNumber,
-                    questionNumber,
-                    answer,
+                    pageNumber: finalPageNumber,
+                    questionNumber: finalQuestionNumber,
+                    answer: finalAnswer,
                 },
             });
 

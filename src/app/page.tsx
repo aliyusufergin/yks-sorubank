@@ -6,6 +6,8 @@ import { QuestionCard } from "@/components/QuestionCard";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
+import { useSettings } from "@/lib/useSettings";
+import { useApiKey } from "@/components/ApiKeyProvider";
 
 const UploadModal = dynamic(() => import("@/components/UploadModal"), { ssr: false });
 const FilterModal = dynamic(() => import("@/components/FilterModal"), { ssr: false });
@@ -34,6 +36,8 @@ interface AIAnalysis {
 
 export default function DashboardPage() {
     const router = useRouter();
+    const { settings: serverSettings } = useSettings();
+    const { requireApiKey } = useApiKey();
     const [questions, setQuestions] = useState<Question[]>([]);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -258,19 +262,18 @@ export default function DashboardPage() {
         setAiResult(null);
         setAiError("");
         setShowAISolve(true);
-        setAiLoading(true);
 
-        const encrypted = localStorage.getItem("yks-sorubank-api-key");
-        if (!encrypted) {
-            setAiError("API anahtarı bulunamadı. Ayarlar sayfasından API anahtarınızı girin.");
-            setAiLoading(false);
+        let apiKey: string;
+        try {
+            apiKey = await requireApiKey();
+        } catch {
+            setShowAISolve(false);
             return;
         }
 
+        setAiLoading(true);
         try {
-            const { decryptApiKey } = await import("@/lib/crypto");
-            const apiKey = await decryptApiKey(encrypted);
-            const model = localStorage.getItem("yks-sorubank-model") || "gemini-2.0-flash";
+            const model = serverSettings["ai-model"];
             const res = await fetch("/api/ai/solve", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -288,7 +291,7 @@ export default function DashboardPage() {
         } finally {
             setAiLoading(false);
         }
-    }, [questions]);
+    }, [questions, requireApiKey, serverSettings]);
 
     const handleEdit = useCallback((questionProps: { id: string; lesson: string; subject?: string | null; source?: string | null; pageNumber?: number | null; questionNumber?: number | null }) => {
         const q = questions.find((q) => q.id === questionProps.id);

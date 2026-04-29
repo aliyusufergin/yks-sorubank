@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { useSettings, updateSetting } from "@/lib/useSettings";
 
 type Theme = "dark" | "light";
 
@@ -15,21 +16,32 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: ReactNode }) {
     const [theme, setThemeState] = useState<Theme>("dark");
     const [mounted, setMounted] = useState(false);
+    const { settings, isLoading } = useSettings();
 
+    // Sync theme from server settings
     useEffect(() => {
-        const saved = localStorage.getItem("yks-sorubank-theme") as Theme | null;
-        if (saved) setThemeState(saved);
+        if (!isLoading && settings.theme) {
+            const serverTheme = settings.theme as Theme;
+            setThemeState(serverTheme);
+        }
         setMounted(true);
-    }, []);
+    }, [isLoading, settings.theme]);
 
     useEffect(() => {
         if (!mounted) return;
         document.documentElement.setAttribute("data-theme", theme);
-        localStorage.setItem("yks-sorubank-theme", theme);
     }, [theme, mounted]);
 
-    const toggleTheme = () => setThemeState((prev) => (prev === "dark" ? "light" : "dark"));
-    const setTheme = (t: Theme) => setThemeState(t);
+    const toggleTheme = () => {
+        const next = theme === "dark" ? "light" : "dark";
+        setThemeState(next);
+        updateSetting("theme", next);
+    };
+
+    const setTheme = (t: Theme) => {
+        setThemeState(t);
+        updateSetting("theme", t);
+    };
 
     if (!mounted) {
         return <div style={{ visibility: "hidden" }}>{children}</div>;

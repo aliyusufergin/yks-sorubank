@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from "react";
 import { Printer, ArrowLeft, Loader2, ChevronDown, ChevronUp, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
+import { useSettings } from "@/lib/useSettings";
 
 interface WorksheetDetail {
     id: string;
@@ -24,21 +25,7 @@ interface WorksheetDetail {
 }
 
 type SpacingSettings = Record<string, number>;
-const STORAGE_KEY = "yks-sorubank-worksheet-spacing";
 const DEFAULT_SPACING = 40;
-
-function loadSpacingSettings(): SpacingSettings {
-    try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        return stored ? JSON.parse(stored) : {};
-    } catch {
-        return {};
-    }
-}
-
-function saveSpacingSettings(settings: SpacingSettings) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-}
 
 export default function WorksheetDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -47,6 +34,7 @@ export default function WorksheetDetailPage({ params }: { params: Promise<{ id: 
     const [showAnswerKey, setShowAnswerKey] = useState(false);
     const [spacingSettings, setSpacingSettings] = useState<SpacingSettings>({});
     const [showSpacingPanel, setShowSpacingPanel] = useState(false);
+    const { settings: serverSettings, isLoading: settingsLoading, updateSetting } = useSettings();
 
     useEffect(() => {
         fetch(`/api/worksheets/${id}`)
@@ -55,8 +43,16 @@ export default function WorksheetDetailPage({ params }: { params: Promise<{ id: 
                 setWorksheet(data);
                 setIsLoading(false);
             });
-        setSpacingSettings(loadSpacingSettings());
     }, [id]);
+
+    // Load spacing from server settings
+    useEffect(() => {
+        if (settingsLoading) return;
+        try {
+            const parsed = JSON.parse(serverSettings["worksheet-spacing"]);
+            setSpacingSettings(parsed);
+        } catch { /* ignore */ }
+    }, [settingsLoading, serverSettings]);
 
     const getSpacing = (lesson: string): number => {
         return spacingSettings[lesson] ?? spacingSettings._default ?? DEFAULT_SPACING;
@@ -65,7 +61,7 @@ export default function WorksheetDetailPage({ params }: { params: Promise<{ id: 
     const updateSpacing = (key: string, value: number) => {
         const updated = { ...spacingSettings, [key]: value };
         setSpacingSettings(updated);
-        saveSpacingSettings(updated);
+        updateSetting("worksheet-spacing", JSON.stringify(updated));
     };
 
     const uniqueLessons = worksheet

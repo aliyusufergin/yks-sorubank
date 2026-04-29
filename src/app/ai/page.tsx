@@ -5,6 +5,8 @@ import { Sparkles, BookOpen, Calendar, Loader2, Send, MessageSquare } from "luci
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
+import { useSettings } from "@/lib/useSettings";
+import { useApiKey } from "@/components/ApiKeyProvider";
 
 interface QuestionInfo {
     id: string;
@@ -20,7 +22,8 @@ interface QuestionInfo {
 
 function AIPageContent() {
     const searchParams = useSearchParams();
-    const [apiKey, setApiKey] = useState("");
+    const { settings: serverSettings } = useSettings();
+    const { hasEncryptedKey, requireApiKey } = useApiKey();
     const [activeTab, setActiveTab] = useState<"recommendations" | "plan">("recommendations");
     const [isLoading, setIsLoading] = useState(false);
     const [result, setResult] = useState("");
@@ -31,15 +34,6 @@ function AIPageContent() {
     const [hoursPerDay, setHoursPerDay] = useState("6");
     const [days, setDays] = useState("7");
     const [customPrompt, setCustomPrompt] = useState("");
-
-    useEffect(() => {
-        const encrypted = localStorage.getItem("yks-sorubank-api-key");
-        if (encrypted) {
-            import("@/lib/crypto").then(({ decryptApiKey }) =>
-                decryptApiKey(encrypted).then((key) => setApiKey(key))
-            );
-        }
-    }, []);
 
     useEffect(() => {
         const ids = searchParams.get("questionIds");
@@ -69,13 +63,15 @@ function AIPageContent() {
     }, [searchParams]);
 
     const callAI = async (action: string) => {
-        if (!apiKey) {
-            setResult("⚠️ Lütfen Ayarlar sayfasından API anahtarınızı girin.");
+        if (selectedQuestions.length === 0) {
+            setResult("⚠️ Soru seçilmedi. Ana sayfadan soruları seçip AI Tavsiye butonuna basın.");
             return;
         }
 
-        if (selectedQuestions.length === 0) {
-            setResult("⚠️ Soru seçilmedi. Ana sayfadan soruları seçip AI Tavsiye butonuna basın.");
+        let apiKey: string;
+        try {
+            apiKey = await requireApiKey();
+        } catch {
             return;
         }
 
@@ -91,12 +87,11 @@ function AIPageContent() {
                 data.days = parseInt(days);
             }
 
-            // Resolve prompt: one-time custom > settings-saved > default (empty = API uses default)
             const effectivePrompt = customPrompt.trim()
-                || localStorage.getItem(action === "study-recommendations"
-                    ? "yks-sorubank-prompt-recommendations"
-                    : "yks-sorubank-prompt-plan"
-                ) || "";
+                || serverSettings[action === "study-recommendations"
+                    ? "prompt-recommendations"
+                    : "prompt-plan"
+                ] || "";
 
             const res = await fetch("/api/ai", {
                 method: "POST",
@@ -105,7 +100,7 @@ function AIPageContent() {
                     apiKey,
                     action,
                     data,
-                    model: localStorage.getItem("yks-sorubank-model") || "gemini-2.0-flash",
+                    model: serverSettings["ai-model"],
                     ...(effectivePrompt ? { customPrompt: effectivePrompt } : {}),
                 }),
             });
@@ -138,9 +133,9 @@ function AIPageContent() {
                 <p className="text-[var(--color-text-secondary)]">
                     Seçtiğin sorulara göre yapay zeka destekli çalışma tavsiyeleri ve program hazırlama.
                 </p>
-                {!apiKey && (
+                {!hasEncryptedKey && (
                     <div className="mt-3 rounded-lg bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/20 px-4 py-2 text-sm text-[var(--color-warning)]">
-                        ⚠️ AI özelliklerini kullanmak için Ayarlar sayfasından API anahtarınızı girin.
+                        ⚠️ AI özelliklerini kullanmak için Ayarlar sayfasından API anahtarınızı kaydedin.
                     </div>
                 )}
                 <div className="mt-3 rounded-lg bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/20 px-4 py-2 text-sm text-[var(--color-accent)]">

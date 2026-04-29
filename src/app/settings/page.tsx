@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Settings, Sun, Moon, Plus, Trash2, Key, BookOpen, Tag, Library, Sparkles, Save, ChevronDown, ChevronUp, Cpu, Loader2, RefreshCw, SlidersHorizontal } from "lucide-react";
+import { Settings, Sun, Moon, Plus, Trash2, Key, BookOpen, Tag, Library, Sparkles, Save, ChevronDown, ChevronUp, Cpu, Loader2, RefreshCw, SlidersHorizontal, Eye, EyeOff, ShieldCheck, Trash } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
-import { encryptApiKey, decryptApiKey } from "@/lib/crypto";
+import { encryptWithPassword } from "@/lib/crypto";
+import { useSettings } from "@/lib/useSettings";
+import { useApiKey } from "@/components/ApiKeyProvider";
 
 interface LessonData {
     id: string;
@@ -31,8 +33,17 @@ interface ModelData {
 
 export default function SettingsPage() {
     const { theme, setTheme } = useTheme();
+    const { hasEncryptedKey, requireApiKey, lockApiKey, refreshEncryptedStatus } = useApiKey();
 
-    const [apiKey, setApiKey] = useState("");
+    const [newApiKey, setNewApiKey] = useState("");
+    const [masterPassword, setMasterPassword] = useState("");
+    const [masterPasswordConfirm, setMasterPasswordConfirm] = useState("");
+    const [showNewApiKey, setShowNewApiKey] = useState(false);
+    const [showMasterPassword, setShowMasterPassword] = useState(false);
+    const [apiKeySaving, setApiKeySaving] = useState(false);
+    const [apiKeyError, setApiKeyError] = useState("");
+    const [apiKeySuccess, setApiKeySuccess] = useState("");
+    const [showApiKeySetup, setShowApiKeySetup] = useState(false);
     const [lessons, setLessons] = useState<LessonData[]>([]);
     const [books, setBooks] = useState<BookData[]>([]);
     const [newLesson, setNewLesson] = useState("");
@@ -61,26 +72,22 @@ export default function SettingsPage() {
     // Worksheet spacing
     const [worksheetSpacing, setWorksheetSpacing] = useState<Record<string, number>>({});
 
+    // Server settings
+    const { settings: serverSettings, isLoading: settingsLoading, updateSetting } = useSettings();
+
+    // Load server settings into local state when ready
     useEffect(() => {
-        const savedModel = localStorage.getItem("yks-sorubank-model");
-        if (savedModel) setSelectedModel(savedModel);
+        if (settingsLoading) return;
+        setSelectedModel(serverSettings["ai-model"]);
+        setRecommendationsPrompt(serverSettings["prompt-recommendations"]);
+        setStudyPlanPrompt(serverSettings["prompt-plan"]);
+        try {
+            const parsed = JSON.parse(serverSettings["worksheet-spacing"]);
+            setWorksheetSpacing(parsed);
+        } catch { /* ignore */ }
+    }, [settingsLoading, serverSettings]);
 
-        const savedRecPrompt = localStorage.getItem("yks-sorubank-prompt-recommendations");
-        const savedPlanPrompt = localStorage.getItem("yks-sorubank-prompt-plan");
-        if (savedRecPrompt) setRecommendationsPrompt(savedRecPrompt);
-        if (savedPlanPrompt) setStudyPlanPrompt(savedPlanPrompt);
-
-        const savedSpacing = localStorage.getItem("yks-sorubank-worksheet-spacing");
-        if (savedSpacing) {
-            try { setWorksheetSpacing(JSON.parse(savedSpacing)); } catch { /* ignore */ }
-        }
-
-        // Decrypt API key
-        const encryptedKey = localStorage.getItem("yks-sorubank-api-key");
-        if (encryptedKey) {
-            decryptApiKey(encryptedKey).then((key) => setApiKey(key));
-        }
-
+    useEffect(() => {
         // Fetch all data in parallel
         Promise.all([
             fetch("/api/lessons").then((r) => r.json()),
@@ -113,30 +120,88 @@ export default function SettingsPage() {
 
 
 
-    const handleApiKeyChange = async (val: string) => {
-        setApiKey(val);
-        if (val) {
-            const encrypted = await encryptApiKey(val);
-            localStorage.setItem("yks-sorubank-api-key", encrypted);
-        } else {
-            localStorage.removeItem("yks-sorubank-api-key");
+    const handleSaveApiKey = async () => {
+        setApiKeyError("");
+        setApiKeySuccess("");
+
+        if (!newApiKey.trim()) {
+            setApiKeyError("API anahtarı boş olamaz.");
+            return;
         }
+        if (!masterPassword) {
+            setApiKeyError("Master parola boş olamaz.");
+            return;
+        }
+        if (masterPassword.length < 4) {
+            setApiKeyError("Master parola en az 4 karakter olmalıdır.");
+            return;
+        }
+        if (masterPassword !== masterPasswordConfirm) {
+            setApiKeyError("Parolalar eşleşmiyor.");
+            return;
+        }
+
+        setApiKeySaving(true);
+        try {
+            const { encrypted, salt, iv } = await encryptWithPassword(newApiKey.trim(), masterPassword);
+
+            await fetch("/api/settings", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    "encrypted-api-key": encrypted,
+                    "api-key-salt": salt,
+                    "api-key-iv": iv,
+                }),
+            });
+
+            setApiKeySuccess("API anahtarı güvenli şekilde kaydedildi.");
+            setNewApiKey("");
+            setMasterPassword("");
+            setMasterPasswordConfirm("");
+            setShowApiKeySetup(false);
+            lockApiKey();
+            await refreshEncryptedStatus();
+        } catch {
+            setApiKeyError("Kayıt sırasında bir hata oluştu.");
+        } finally {
+            setApiKeySaving(false);
+        }
+    };
+
+    const handleDeleteApiKey = async () => {
+        if (!confirm("API anahtarını silmek istediğinize emin misiniz? Tekrar girmeniz gerekecek.")) return;
+        await fetch("/api/settings", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                "encrypted-api-key": "",
+                "api-key-salt": "",
+                "api-key-iv": "",
+            }),
+        });
+        lockApiKey();
+        await refreshEncryptedStatus();
+        setApiKeySuccess("");
     };
 
     const handleModelChange = (model: string) => {
         setSelectedModel(model);
-        localStorage.setItem("yks-sorubank-model", model);
+        updateSetting("ai-model", model);
     };
 
     const updateWorksheetSpacing = (key: string, value: number) => {
         const updated = { ...worksheetSpacing, [key]: value };
         setWorksheetSpacing(updated);
-        localStorage.setItem("yks-sorubank-worksheet-spacing", JSON.stringify(updated));
+        updateSetting("worksheet-spacing", JSON.stringify(updated));
     };
 
     const fetchModels = async () => {
-        if (!apiKey) {
-            setModelsError("Önce API anahtarınızı girin.");
+        let key: string;
+        try {
+            key = await requireApiKey();
+        } catch {
+            setModelsError("API anahtarı kilidi açılmadı.");
             return;
         }
         setModelsLoading(true);
@@ -145,7 +210,7 @@ export default function SettingsPage() {
             const res = await fetch("/api/ai/models", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ apiKey }),
+                body: JSON.stringify({ apiKey: key }),
             });
             const data = await res.json();
             if (data.error) {
@@ -339,16 +404,126 @@ export default function SettingsPage() {
                     <Key size={16} />
                     AI API Anahtarı
                 </h2>
-                <p className="text-xs text-[var(--color-text-muted)]">
-                    Google Gemini API anahtarınızı girin. Anahtar AES-256 ile şifrelenerek tarayıcınızda saklanır.
-                </p>
-                <input
-                    type="password"
-                    value={apiKey}
-                    onChange={(e) => handleApiKeyChange(e.target.value)}
-                    placeholder="API anahtarınızı yapıştırın..."
-                    className="input-field"
-                />
+
+                {hasEncryptedKey && !showApiKeySetup ? (
+                    <>
+                        <div className="flex items-center gap-2 rounded-lg bg-[var(--color-success)]/10 border border-[var(--color-success)]/20 px-4 py-3">
+                            <ShieldCheck size={18} className="text-[var(--color-success)] flex-shrink-0" />
+                            <div>
+                                <p className="text-sm font-medium text-[var(--color-success)]">API anahtarı güvenli şekilde kayıtlı</p>
+                                <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                                    Anahtar, master parolanızla şifrelenerek sunucuda saklanıyor.
+                                </p>
+                            </div>
+                        </div>
+                        {apiKeySuccess && (
+                            <p className="text-xs text-[var(--color-success)]">{apiKeySuccess}</p>
+                        )}
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => { setShowApiKeySetup(true); setApiKeySuccess(""); }}
+                                className="btn-secondary text-sm py-2 px-4 flex items-center gap-2"
+                            >
+                                <Key size={14} />
+                                Değiştir
+                            </button>
+                            <button
+                                onClick={handleDeleteApiKey}
+                                className="btn-secondary text-sm py-2 px-4 flex items-center gap-2 text-[var(--color-danger)]"
+                            >
+                                <Trash size={14} />
+                                Sil
+                            </button>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <p className="text-xs text-[var(--color-text-muted)]">
+                            Google Gemini API anahtarınızı girin ve bir master parola belirleyin.
+                            Anahtar, parolanızla şifrelenerek sunucuda güvenle saklanır.
+                        </p>
+
+                        {apiKeyError && (
+                            <p className="text-xs text-[var(--color-danger)] bg-[var(--color-danger)]/10 rounded-lg px-3 py-2">
+                                {apiKeyError}
+                            </p>
+                        )}
+
+                        <div className="space-y-3">
+                            <div>
+                                <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">API Anahtarı</label>
+                                <div className="relative">
+                                    <input
+                                        type={showNewApiKey ? "text" : "password"}
+                                        value={newApiKey}
+                                        onChange={(e) => setNewApiKey(e.target.value)}
+                                        placeholder="API anahtarınızı yapıştırın..."
+                                        className="input-field pr-10"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowNewApiKey(!showNewApiKey)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+                                    >
+                                        {showNewApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Master Parola</label>
+                                <div className="relative">
+                                    <input
+                                        type={showMasterPassword ? "text" : "password"}
+                                        value={masterPassword}
+                                        onChange={(e) => setMasterPassword(e.target.value)}
+                                        placeholder="Güçlü bir parola belirleyin..."
+                                        className="input-field pr-10"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowMasterPassword(!showMasterPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+                                    >
+                                        {showMasterPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Master Parola (Tekrar)</label>
+                                <input
+                                    type="password"
+                                    value={masterPasswordConfirm}
+                                    onChange={(e) => setMasterPasswordConfirm(e.target.value)}
+                                    placeholder="Parolayı tekrar girin..."
+                                    className="input-field"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                            <button
+                                onClick={handleSaveApiKey}
+                                disabled={apiKeySaving || !newApiKey.trim() || !masterPassword}
+                                className="btn-primary flex items-center gap-2 text-sm disabled:opacity-50"
+                            >
+                                {apiKeySaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                                {apiKeySaving ? "Şifreleniyor..." : "Güvenli Kaydet"}
+                            </button>
+                            {showApiKeySetup && (
+                                <button
+                                    onClick={() => { setShowApiKeySetup(false); setApiKeyError(""); }}
+                                    className="btn-secondary text-sm py-2 px-4"
+                                >
+                                    İptal
+                                </button>
+                            )}
+                        </div>
+
+                        <p className="text-xs text-[var(--color-text-muted)] italic">
+                            🔒 Parolanız hiçbir yerde saklanmaz. AI özelliklerini kullanırken sizden istenir.
+                        </p>
+                    </>
+                )}
             </section>
 
             {/* Model Selection */}
@@ -376,7 +551,7 @@ export default function SettingsPage() {
                     </select>
                     <button
                         onClick={fetchModels}
-                        disabled={modelsLoading || !apiKey}
+                        disabled={modelsLoading}
                         className="btn-secondary px-3 disabled:opacity-50"
                         title="Modelleri yenile"
                     >
@@ -524,11 +699,7 @@ export default function SettingsPage() {
                         value={recommendationsPrompt}
                         onChange={(e) => {
                             setRecommendationsPrompt(e.target.value);
-                            if (e.target.value.trim()) {
-                                localStorage.setItem("yks-sorubank-prompt-recommendations", e.target.value.trim());
-                            } else {
-                                localStorage.removeItem("yks-sorubank-prompt-recommendations");
-                            }
+                            updateSetting("prompt-recommendations", e.target.value.trim());
                         }}
                         placeholder={`Varsayılan: Sen bir YKS sınav koçusun. Öğrenci aşağıdaki soruları çalışmak istiyor:\n\nBu bilgilere göre:\n1. Hangi konulara öncelik vermesi gerektiğini\n2. Her konu için somut çalışma tavsiyeleri\n3. Zayıf yönlerini nasıl güçlendirebileceğini\n4. Motivasyon artırıcı öneriler\n\nTürkçe olarak, madde madde açıkla.`}
                         className="input-field min-h-[80px] resize-y text-sm"
@@ -545,11 +716,7 @@ export default function SettingsPage() {
                         value={studyPlanPrompt}
                         onChange={(e) => {
                             setStudyPlanPrompt(e.target.value);
-                            if (e.target.value.trim()) {
-                                localStorage.setItem("yks-sorubank-prompt-plan", e.target.value.trim());
-                            } else {
-                                localStorage.removeItem("yks-sorubank-prompt-plan");
-                            }
+                            updateSetting("prompt-plan", e.target.value.trim());
                         }}
                         placeholder={`Varsayılan: Sen bir YKS sınav koçusun. Aşağıdaki sorulardan elde edilen konulara göre bir çalışma programı hazırla:\n\nLütfen:\n1. Günlük program tablosu oluştur\n2. Konuları önem ve zorluk derecesine göre dağıt\n3. Tekrar zamanlarını planla\n4. Mola zamanlarını ekle\n\nTürkçe olarak, detaylı bir şekilde açıkla.`}
                         className="input-field min-h-[80px] resize-y text-sm"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Upload, Plus, Loader2, AlertTriangle } from "lucide-react";
+import { X, Upload, Plus, Loader2, AlertTriangle, FileText } from "lucide-react";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB per file
 const MAX_TOTAL_SIZE = 250 * 1024 * 1024; // 250MB total
@@ -34,6 +34,7 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
     const [whitenBg, setWhitenBg] = useState(false);
     const [scanStrength, setScanStrength] = useState("8");
     const [convertWebp, setConvertWebp] = useState(true);
+    const [parseFromFilename, setParseFromFilename] = useState(false);
     const [fileSizeWarning, setFileSizeWarning] = useState<string | null>(null);
     const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -92,8 +93,12 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
         formData.append("lesson", lesson);
         if (subject) formData.append("subject", subject);
         if (source) formData.append("source", source);
-        if (pageNumber) formData.append("pageNumber", pageNumber);
-        if (questionNumber) formData.append("questionNumber", questionNumber);
+        if (parseFromFilename) {
+            formData.append("parseFromFilename", "true");
+        } else {
+            if (pageNumber) formData.append("pageNumber", pageNumber);
+            if (questionNumber) formData.append("questionNumber", questionNumber);
+        }
         if (answer) formData.append("answer", answer);
         formData.append("grayscale", String(grayscale));
         formData.append("contrastBoost", String(contrastBoost));
@@ -293,35 +298,81 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
                     </div>
 
                     {/* Page & Question Number */}
-                    <div className="grid grid-cols-2 gap-3">
-                        <div>
-                            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
-                                Sayfa / Deneme No
-                            </label>
-                            <input
-                                type="number"
-                                value={pageNumber}
-                                onChange={(e) => setPageNumber(e.target.value)}
-                                placeholder="Ör: 42"
-                                className="input-field"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
-                                Soru No
-                            </label>
-                            <input
-                                type="number"
-                                value={questionNumber}
-                                onChange={(e) => setQuestionNumber(e.target.value)}
-                                placeholder="Ör: 7"
-                                className="input-field"
-                            />
+                    <div className="space-y-3">
+                        <label className="flex items-center justify-between cursor-pointer rounded-lg border border-[var(--color-border)] p-3"
+                            title="Dosya adı 'sayfaNo-soruNo.uzantı' formatında olmalıdır. Ör: 86-3.png">
+                            <div className="flex items-start gap-2">
+                                <FileText size={16} className="flex-shrink-0 mt-0.5 text-[var(--color-brand)]" />
+                                <div>
+                                    <span className="text-sm text-[var(--color-text-primary)]">Dosya Adından Al</span>
+                                    <p className="text-xs text-[var(--color-text-muted)]">Sayfa, soru no ve cevabı dosya adından çıkarır (<code className="px-1 py-0.5 rounded bg-[var(--color-bg-elevated)] text-[var(--color-brand-light)]">86-3-A.png</code> → S.86 / No.3 / Cvp.A)</p>
+                                </div>
+                            </div>
+                            <div className="relative flex-shrink-0 ml-3">
+                                <input type="checkbox" checked={parseFromFilename} onChange={(e) => { setParseFromFilename(e.target.checked); if (e.target.checked) { setPageNumber(""); setQuestionNumber(""); setAnswer(""); } }} className="sr-only peer" />
+                                <div className="w-9 h-5 bg-[var(--color-bg-elevated)] rounded-full peer peer-checked:bg-[var(--color-brand)] transition-colors" />
+                                <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4" />
+                            </div>
+                        </label>
+
+                        {/* Preview parsed filenames when toggle is on and files exist */}
+                        {parseFromFilename && files.length > 0 && (
+                            <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elevated)]/50 p-2 max-h-28 overflow-y-auto">
+                                <div className="space-y-1">
+                                    {files.map((f, i) => {
+                                        const baseName = f.name.replace(/\.[^.]+$/, "");
+                                        const match = baseName.match(/^(\d+)-(\d+)(?:-([A-Za-z]+))?$/);
+                                        return (
+                                            <div key={i} className="flex items-center gap-2 text-xs">
+                                                <span className="text-[var(--color-text-muted)] truncate flex-1 min-w-0">{f.name}</span>
+                                                {match ? (
+                                                    <span className="flex-shrink-0 text-[var(--color-success,#22c55e)]">
+                                                        S.{match[1]} / No.{match[2]}{match[3] ? ` / Cvp.${match[3]}` : ''}
+                                                    </span>
+                                                ) : (
+                                                    <span className="flex-shrink-0 text-[var(--color-warning,#f59e0b)]">
+                                                        ⚠ Format uyumsuz
+                                                    </span>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className={`grid grid-cols-2 gap-3 transition-opacity ${parseFromFilename ? 'opacity-40 pointer-events-none' : ''}`}>
+                            <div>
+                                <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
+                                    Sayfa / Deneme No
+                                </label>
+                                <input
+                                    type="number"
+                                    value={pageNumber}
+                                    onChange={(e) => setPageNumber(e.target.value)}
+                                    placeholder="Ör: 42"
+                                    className="input-field"
+                                    disabled={parseFromFilename}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
+                                    Soru No
+                                </label>
+                                <input
+                                    type="number"
+                                    value={questionNumber}
+                                    onChange={(e) => setQuestionNumber(e.target.value)}
+                                    placeholder="Ör: 7"
+                                    className="input-field"
+                                    disabled={parseFromFilename}
+                                />
+                            </div>
                         </div>
                     </div>
 
                     {/* Answer */}
-                    <div>
+                    <div className={`transition-opacity ${parseFromFilename ? 'opacity-40 pointer-events-none' : ''}`}>
                         <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
                             Cevap
                         </label>
@@ -331,6 +382,7 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
                             onChange={(e) => setAnswer(e.target.value)}
                             placeholder="Ör: A, B, C, D, E"
                             className="input-field"
+                            disabled={parseFromFilename}
                         />
                     </div>
 

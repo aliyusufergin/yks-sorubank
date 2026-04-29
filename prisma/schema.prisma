@@ -97,3 +97,8 @@ model AIPrompt {
 
   @@unique([lesson, subject])
 }
+
+model AppSetting {
+  key   String @id
+  value String
+}
